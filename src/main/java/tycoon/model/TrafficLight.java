@@ -22,4 +22,12 @@ public class TrafficLight {
             state = SignalPhase.NS_GREEN;
         }
     }
+
+    public boolean canPass(Direction direction) {
+        if (state == SignalPhase.NS_GREEN) {
+            return direction == Direction.N || direction == Direction.S;
+        } else {
+            return direction == Direction.E || direction == Direction.W;
+        }
+    }
 }
