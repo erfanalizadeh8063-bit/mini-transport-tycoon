@@ -35,8 +35,9 @@ public class GameEngine {
         }
 
         // 2. Update all vehicles (movement and cargo handling)
-        for (Vehicle v : vehicles) {
-            v.update(effectiveDt);
+        // 这样写最安全，即使在 update() 里面删除了车辆也不会崩溃
+        for (int i = vehicles.size() - 1; i >= 0; i--) {
+            vehicles.get(i).update(effectiveDt);
         }
         
         // 3. Check for bankruptcy
@@ -76,7 +77,21 @@ public class GameEngine {
         return this.balance >= amount;
     }
 
+    public boolean spendMoney(double amount) {
+        if (canAfford(amount)) {
+            spend(amount);
+            return true;
+        }
+        return false;
+    }
+
     // --- GETTERS & SETTERS ---
+    /**
+     * 对应 GameWindow 里的 engine.setSimulationSpeed(倍率)
+     */
+    public void setSimulationSpeed(double speed) {
+        this.setSpeed(speed);
+    }
 
     public void setSpeed(double speed) { 
         this.simulationSpeed = speed; 

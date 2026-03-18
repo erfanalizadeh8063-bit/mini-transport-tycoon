@@ -24,7 +24,7 @@ public class WorldMap {
     private void initializeEmptyMap() {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                grid[x][y] = new EmptyTile(new Vector2(x, y), 0, this);
+                grid[x][y] = new EmptyTile(new Vector2(x, y), 0.0, this);
             }
         }
     }
@@ -67,4 +67,12 @@ public class WorldMap {
 
     public int getWidth() { return width; }
     public int getHeight() { return height; }
+
+    public void setFacility(int startX, int startY, int width, int height, Facility facility) {
+        for (int x = startX; x < startX + width; x++) {
+            for (int y = startY; y < startY + height; y++) {
+               setTile(x, y, facility);
+            }
+        }
+    }
 }

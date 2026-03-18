@@ -1,57 +1,44 @@
 package tycoon.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-
+/**
+ * Represents a City that occupies a 3x3 area on the map.
+ * Cities generate passengers over time and grow as they receive goods.
+ */
 public class City extends Facility {
-    private Map<CargoType, Double> demand;
+    private double population;
+    private double timeSinceLastGeneration;
+    private static final double GENERATION_INTERVAL = 5.0; // Generate passengers every 5 seconds
 
-    public City(String name, List<Vector2> tiles, WorldMap map) {
-        super(name, tiles, map);
-        this.demand = new HashMap<>();
-        this.demand.put(CargoType.GOODS_A, 1.0);
-    }
-
-    public void updateDemand(double dt) {
-        for (CargoType type : demand.keySet()) {
-            double currentDemand = demand.get(type);
-            demand.put(type, currentDemand + (0.01 * dt));
-        }
+    public City(Vector2 pos, double height, WorldMap map, String name, double initialPopulation) {
+        super(pos, height, map, name);
+        this.population = initialPopulation;
+        this.timeSinceLastGeneration = 0.0;
+        
+        this.maxCapacity = 1000; 
     }
 
     @Override
     public void onTick(double dt) {
-        updateDemand(dt);
-        int currentPassengers = storage.getOrDefault(CargoType.PASSENGERS, 0);
-        if (Math.random() < 0.1 * dt) { 
-             storage.put(CargoType.PASSENGERS, currentPassengers + 1);
+        // 1. Natural population growth
+        population += dt * 0.01; 
+
+        // 2. Passenger generation timer
+        timeSinceLastGeneration += dt;
+        
+        if (timeSinceLastGeneration >= GENERATION_INTERVAL) {
+            int newPassengers = (int) (population * 0.1);
+            
+            produce(CargoType.PASSENGERS, newPassengers);
+            
+            timeSinceLastGeneration = 0.0; 
         }
     }
 
-    @Override
-    public int load(CargoType type, int amount) {
-        if (type != CargoType.PASSENGERS) return 0;
-        int available = storage.getOrDefault(type, 0);
-        int actual = Math.min(available, amount);
-        storage.put(type, available - actual);
-        return actual;
-    }
-
-    @Override
-    public int unload(CargoType type, int amount) {
-        int current = storage.getOrDefault(type, 0);
-        storage.put(type, current + amount);
-        return amount;
-    }
-
-    @Override
-    public boolean isBuildable() {
-        return false; 
-    }
-
-    @Override
-    public double getBuildCostModifier() {
-        return 2.0; 
+    /**
+     * Helper method for the UI Detail Panel.
+     * Returns the population as a clean integer.
+     */
+    public int getDisplayPopulation() {
+        return (int) population;
     }
 }
