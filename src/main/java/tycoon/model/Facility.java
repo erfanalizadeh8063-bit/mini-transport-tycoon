@@ -1,37 +1,57 @@
 package tycoon.model;
 
-import java.util.List;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Base class for Cities and Industrial facilities.
- * Implements ITransportPoint for cargo interaction.
+ * Represents a fixed facility (City, Industry) on the map.
+ * Facilities take up space and manage an inventory of cargo.
  */
-public abstract class Facility extends Tile implements ITransportPoint {
-    protected String name;
-    protected List<Vector2> occupiedTiles;
-    protected Map<CargoType, Integer> storage;
-
-    public Facility(String name, List<Vector2> occupiedTiles, WorldMap map) {
-        super(occupiedTiles.get(0), 0, map); 
-        
-        this.name = name;
-        this.occupiedTiles = occupiedTiles;
-        this.storage = new HashMap<>();
-    }
-
-    public String getName() { return name; }
-    public List<Vector2> getOccupiedTiles() { return occupiedTiles; }
-
-    @Override
-    public abstract int load(CargoType type, int amount);
-
-    @Override
-    public abstract int unload(CargoType type, int amount);
+public abstract class Facility extends Tile {
+    private String name;
+    protected Map<CargoType, Integer> inventory;
     
-    @Override
-    public void onTick(double dt) {
-        //basic Logic
+    // Maximum capacity to prevent infinite cargo accumulation
+    protected int maxCapacity = 500; 
+
+    public Facility(Vector2 pos, double height, WorldMap map, String name) {
+        super(pos, height, map); 
+        this.name = name;
+        this.inventory = new HashMap<>();
     }
+
+    public int load(CargoType type, int requestedAmount) {
+        int available = inventory.getOrDefault(type, 0);
+        int amountToLoad = Math.min(available, requestedAmount);
+        inventory.put(type, available - amountToLoad);
+        return amountToLoad;
+    }
+
+    public void unload(CargoType type, int amount) {
+        int current = inventory.getOrDefault(type, 0);
+        inventory.put(type, Math.min(current + amount, maxCapacity));
+    }
+
+    protected void produce(CargoType type, int amount) {
+        int current = inventory.getOrDefault(type, 0);
+        if (current < maxCapacity) {
+            inventory.put(type, Math.min(current + amount, maxCapacity));
+        }
+    }
+
+    // --- Inherited from Tile ---
+    @Override
+    public boolean isBuildable() {
+        return false; 
+    }
+
+    @Override
+    public double getBuildCostModifier() {
+        return 1.0;
+    }
+
+    // --- Getters ---
+    public String getName() { return name; }
+    public Map<CargoType, Integer> getInventory() { return inventory; }
+    public int getStockpile(CargoType type) { return inventory.getOrDefault(type, 0); }
 }

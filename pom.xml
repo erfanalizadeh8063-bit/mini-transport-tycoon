@@ -37,6 +37,14 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
             </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>tycoon.ui.GameWindow</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

@@ -1,4 +1,3 @@
-
 package tycoon.service;
 
 import java.util.*;
@@ -7,9 +6,6 @@ import tycoon.model.RoadTile;
 import tycoon.model.Tile;
 import tycoon.model.WorldMap;
 
-/**
- * Service to find a path between two road tiles using BFS.
- */
 public class PathFinder {
     private WorldMap map;
 
@@ -17,30 +13,51 @@ public class PathFinder {
         this.map = map;
     }
 
-    /**
-     * Finds a list of RoadTiles connecting start and goal.
-     */
     public List<RoadTile> findPath(RoadTile start, RoadTile goal) {
-        Queue<List<RoadTile>> queue = new LinkedList<>();
-        queue.add(Collections.singletonList(start));
-        Set<RoadTile> visited = new HashSet<>();
-        visited.add(start);
+
+        if (start == null || goal == null) return null;
+        if (start.equals(goal)) return Collections.singletonList(start);
+
+
+        Queue<RoadTile> queue = new LinkedList<>();
+ 
+        Map<RoadTile, RoadTile> cameFrom = new HashMap<>();
+
+        queue.add(start);
+        cameFrom.put(start, null); 
+
+        RoadTile foundGoal = null;
 
         while (!queue.isEmpty()) {
-            List<RoadTile> path = queue.poll();
-            RoadTile last = path.get(path.size() - 1);
+            RoadTile current = queue.poll();
 
-            if (last.equals(goal)) return path;
 
-            for (Tile neighbor : map.neighbors(last)) {
-                if (neighbor instanceof RoadTile nextRoad && !visited.contains(nextRoad)) {
-                    visited.add(nextRoad);
-                    List<RoadTile> newPath = new ArrayList<>(path);
-                    newPath.add(nextRoad);
-                    queue.add(newPath);
+            if (current.equals(goal)) {
+                foundGoal = current;
+                break; 
+            }
+
+            for (Tile neighbor : map.neighbors(current)) {
+            
+                if (neighbor instanceof RoadTile nextRoad && !cameFrom.containsKey(nextRoad)) {
+                    cameFrom.put(nextRoad, current); 
+                    queue.add(nextRoad);
                 }
             }
         }
-        return null; // No path found
+
+
+        if (foundGoal == null) return null;
+
+     
+        List<RoadTile> path = new ArrayList<>();
+        RoadTile curr = foundGoal;
+        while (curr != null) {
+            path.add(curr);
+            curr = cameFrom.get(curr);
+        }
+        
+        Collections.reverse(path); 
+        return path;
     }
 }
