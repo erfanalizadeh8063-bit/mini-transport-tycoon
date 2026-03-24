@@ -31,8 +31,12 @@ public abstract class Vehicle {
         if (targetTile == null) return;
 
         // Check if the way is clear (integrates with colleague's Junction/TrafficLight)
-        if (progress == 0 && !targetTile.canEnter(currentDirection)) {
-            return; // Wait until the next tile is free or light is green
+        if (progress == 0) {
+            if (!targetTile.canEnter(currentDirection)) {
+                return; // Wait until the next tile is free or light is green
+            }
+            // Reserve immediately so no other vehicle can claim this tile
+            targetTile.reserve(currentDirection, this);
         }
 
         // Advance progress based on speed and delta time
@@ -54,8 +58,7 @@ public abstract class Vehicle {
         currentTile = targetTile;
         progress = 0.0;
 
-        // Reserve the new position in the current tile
-        currentTile.reserve(currentDirection, this);
+        // targetTile was already reserved when movement started; nothing to do here
 
         // Logic to determine the NEXT targetTile based on Route would go here
         // targetTile = pathFinder.nextStep(currentTile, route.getCurrentTarget());
