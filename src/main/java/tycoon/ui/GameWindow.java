@@ -14,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import tycoon.model.*;
 import tycoon.service.GameEngine;
+import java.util.Random;
 
 public class GameWindow extends Application {
     private static final int TILE_SIZE = 64;
@@ -31,6 +32,9 @@ public class GameWindow extends Application {
     private VBox detailPanel;
     private boolean isBuildMode = false;
     private double simulatedTime = 0;
+    private Canvas minimapCanvas;
+    private MinimapRenderer minimapRenderer;
+    private ScrollPane scrollPane;
 
     @Override
     public void start(Stage primaryStage) {
@@ -131,6 +135,15 @@ public class GameWindow extends Application {
         worldMap.setTile(5, 5, new City(new Vector2(5, 5), 0.0, worldMap, "Budapest", 1000));
         worldMap.setTile(15, 5, new Industry(new Vector2(15, 5), 0.0, worldMap, "Lumber Mill", CargoType.GOODS_A));
 
+        Random rng = new Random(42);
+        for (int x = 0; x < worldMap.getWidth(); x++) {
+            for (int y = 0; y < worldMap.getHeight(); y++) {
+                if (worldMap.getTile(x, y) instanceof EmptyTile && rng.nextDouble() < 0.15) {
+                    worldMap.setTile(x, y, new ForestTile(new Vector2(x, y), 0.0, worldMap, rng.nextInt(4) + 1));
+                }
+            }
+        }
+
         RoadTile trafficLightRoad = new RoadTile(new Vector2(10, 5), 0.0, worldMap, 50.0);
         Junction junction = new Junction();
         junction.installTrafficLight(new TrafficLight());
@@ -142,20 +155,31 @@ public class GameWindow extends Application {
         gameRoot.setBottom(createBottomBar());
 
         StackPane centerContainer = new StackPane();
-        ScrollPane scrollPane = new ScrollPane();
+        scrollPane = new ScrollPane();
         Canvas canvas = new Canvas(worldMap.getWidth() * TILE_SIZE, worldMap.getHeight() * TILE_SIZE);
         scrollPane.setContent(canvas);
+
+        minimapRenderer = new MinimapRenderer();
+        int mmW = worldMap.getWidth() * MinimapRenderer.cellSize();
+        int mmH = worldMap.getHeight() * MinimapRenderer.cellSize();
+        minimapCanvas = new Canvas(mmW, mmH);
+        minimapCanvas.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 4, 0, 0, 2);");
+
+        minimapCanvas.setOnMouseClicked(e -> {
+            double fx = e.getX() / mmW;
+            double fy = e.getY() / mmH;
+            scrollPane.setHvalue(fx);
+            scrollPane.setVvalue(fy);
+        });
+
+        StackPane miniMapContainer = new StackPane(minimapCanvas);
+        miniMapContainer.setStyle("-fx-background-color: black; -fx-border-color: white; -fx-border-width: 1;");
 
         AnchorPane floatingUI = new AnchorPane();
         floatingUI.setPickOnBounds(false);
 
-        VBox miniMap = new VBox();
-        miniMap.setPrefSize(200, 200);
-        miniMap.setStyle(
-                "-fx-background-color: rgba(200, 200, 200, 0.8); -fx-border-color: black; -fx-alignment: center;");
-        miniMap.getChildren().add(new Label("Mini Map\n(Coming Soon)"));
-        AnchorPane.setBottomAnchor(miniMap, 20.0);
-        AnchorPane.setRightAnchor(miniMap, 20.0);
+        AnchorPane.setBottomAnchor(miniMapContainer, 20.0);
+        AnchorPane.setRightAnchor(miniMapContainer, 20.0);
 
         detailPanel = new VBox(10);
         detailPanel.setPrefWidth(180);
@@ -164,7 +188,7 @@ public class GameWindow extends Application {
                 "-fx-background-color: rgba(255, 255, 255, 0.95); -fx-border-color: black; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 5);");
         detailPanel.setVisible(false);
 
-        floatingUI.getChildren().addAll(miniMap, detailPanel);
+        floatingUI.getChildren().addAll(miniMapContainer, detailPanel);
         centerContainer.getChildren().addAll(scrollPane, floatingUI);
         gameRoot.setCenter(centerContainer);
 
@@ -179,6 +203,7 @@ public class GameWindow extends Application {
                     double dt = (now - lastUpdate) / 1_000_000_000.0;
                     engine.tick(dt);
                     renderer.render(canvas.getGraphicsContext2D(), worldMap, engine.getVehicles());
+                    minimapRenderer.render(minimapCanvas.getGraphicsContext2D(), worldMap);
 
                     capitalLabel.setText("Capital: $" + (int) engine.getBalance());
                     simulatedTime += dt * engine.getSimulationSpeed();
