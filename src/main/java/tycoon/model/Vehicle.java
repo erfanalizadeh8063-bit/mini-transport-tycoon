@@ -68,5 +68,12 @@ public abstract class Vehicle {
     public RoadTile getTargetTile() { return targetTile; }
     public double getProgress() { return progress; }
 
+    public void setCurrentTile(RoadTile tile) {
+        this.currentTile = tile;
+    }
+
+    public void setTargetTile(RoadTile tile) {
+        this.targetTile = tile;
+    }
 
 }

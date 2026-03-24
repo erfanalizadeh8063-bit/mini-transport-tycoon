@@ -7,7 +7,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
@@ -26,7 +28,6 @@ public class GameWindow extends Application {
     private GameRenderer renderer;
     private AnimationTimer gameLoop;
     
-
     private Label capitalLabel;
     private Label timeLabel;
     private VBox detailPanel; 
@@ -37,14 +38,11 @@ public class GameWindow extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         
-        // 初始化一个空场景，大小设为 1440x900
         mainScene = new Scene(new Pane(), 1440, 900);
         primaryStage.setTitle("Mini Transport Tycoon");
         primaryStage.setScene(mainScene);
         
-        // 启动时首先显示主菜单
         showMainMenu();
-        
         primaryStage.show();
     }
 
@@ -87,7 +85,6 @@ public class GameWindow extends Application {
     // 2. Game Over
     // ==========================================
     private void showGameOver() {
-
         if (gameLoop != null) gameLoop.stop();
 
         StackPane root = new StackPane();
@@ -125,8 +122,40 @@ public class GameWindow extends Application {
         simulatedTime = 0;
         isBuildMode = false;
 
-        worldMap.setTile(5, 5, new City(new Vector2(5, 5), 0.0, worldMap, "Budapest", 1000));
-        worldMap.setTile(15, 5, new Industry(new Vector2(15, 5), 0.0, worldMap, "Lumber Mill", CargoType.GOODS_A));
+        // [Fix 1] City logically occupies a 3x3 area
+        City budapest = new City(new Vector2(5, 5), 0.0, worldMap, "Budapest", 1000);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (5 + i < worldMap.getWidth() && 5 + j < worldMap.getHeight()) {
+                    worldMap.setTile(5 + i, 5 + j, budapest);
+                }
+            }
+        }
+
+        // [Fix 1] Industry logically occupies a 2x2 area
+        Industry lumberMill = new Industry(new Vector2(15, 5), 0.0, worldMap, "Lumber Mill", CargoType.GOODS_A);
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                if (15 + i < worldMap.getWidth() && 5 + j < worldMap.getHeight()) {
+                    worldMap.setTile(15 + i, 5 + j, lumberMill);
+                }
+            }
+        }
+        
+        // [New Fix] Randomly generate forests (Forests Sub-task)
+        java.util.Random rand = new java.util.Random();
+        for (int x = 0; x < worldMap.getWidth(); x++) {
+            for (int y = 0; y < worldMap.getHeight(); y++) {
+                Tile t = worldMap.getTile(x, y);
+                // Ensure trees only spawn on empty tiles, not on cities or factories
+                if (t instanceof EmptyTile) {
+                    if (rand.nextDouble() < 0.15) { // 15% chance to spawn a forest on an empty tile
+                        int trees = rand.nextInt(4) + 1; // Generates 1 to 4 trees
+                        ((EmptyTile) t).setTreeCount(trees); 
+                    }
+                }
+            }
+        }
 
         BorderPane gameRoot = new BorderPane();
         gameRoot.setTop(createTopBar());
@@ -157,9 +186,7 @@ public class GameWindow extends Application {
         centerContainer.getChildren().addAll(scrollPane, floatingUI);
         gameRoot.setCenter(centerContainer);
 
-
         mainScene.setRoot(gameRoot);
-
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
@@ -173,7 +200,6 @@ public class GameWindow extends Application {
                     capitalLabel.setText("Capital: $" + (int)engine.getBalance());
                     simulatedTime += dt * engine.getSimulationSpeed();
                     timeLabel.setText(String.format("Time: Day %d", (int)simulatedTime));
-
 
                     if (engine.getBalance() < 0) {
                         showGameOver();
@@ -190,9 +216,19 @@ public class GameWindow extends Application {
             Tile tile = worldMap.getTile(x, y);
 
             if (isBuildMode && tile instanceof EmptyTile) {
-                engine.spend(100); 
-                worldMap.setTile(x, y, new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0));
-                detailPanel.setVisible(false);
+                EmptyTile emptyTile = (EmptyTile) tile;
+                
+                // [Fix 2] Forests sub-task logic: Costs $200 for a forest tile, $100 for normal grass.
+                double cost = (emptyTile.getTreeCount() > 0) ? 200.0 : 100.0; 
+
+                if (engine.spendMoney(cost)) {
+                    worldMap.setTile(x, y, new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0));
+                    detailPanel.setVisible(false);
+                    // Update the UI capital immediately
+                    capitalLabel.setText("Capital: $" + (int)engine.getBalance());
+                } else {
+                    System.out.println("Not enough money to build a road!");
+                }
             } else {
                 if (tile instanceof Facility) {
                     updateDetailPanel((Facility) tile);
@@ -205,7 +241,6 @@ public class GameWindow extends Application {
             }
         });
     }
-
 
     private HBox createTopBar() {
         HBox top = new HBox(40);
@@ -253,7 +288,62 @@ public class GameWindow extends Application {
         buildBtn.setOnAction(e -> isBuildMode = !isBuildMode);
         
         Button stopBtn = new Button("Place\nStop");
+        
+        // [Fix 3] Vehicle Purchase UI & Logic (Vertical Prototyping - Dynamic Pathfinding)
         Button vehicleBtn = new Button("Buy\nVehicle");
+        vehicleBtn.setOnAction(e -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Buy Vehicle");
+            alert.setHeaderText("Purchase a new delivery truck?");
+            alert.setContentText("Cost: $500");
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    if (engine.spendMoney(500)) {
+                        
+                        RoadTile startTile = null;
+                        RoadTile targetTile = null;
+
+                        for (int x = 0; x < worldMap.getWidth(); x++) {
+                            for (int y = 0; y < worldMap.getHeight(); y++) {
+                                Tile t = worldMap.getTile(x, y);
+                                if (t instanceof RoadTile) {
+                                    if (startTile == null) {
+                                        startTile = (RoadTile) t; 
+                                    } else {
+                                        targetTile = (RoadTile) t; 
+                                    }
+                                }
+                            }
+                        }
+
+                        if (startTile != null) {
+                            if (targetTile == null) targetTile = startTile; 
+
+                            Vehicle newCar = new Vehicle("TRUCK-001", 1.5, 100) {}; 
+                            newCar.setCurrentTile(startTile);
+                            newCar.setTargetTile(targetTile);
+        
+                            engine.addVehicle(newCar);
+                            System.out.println("Vehicle successfully purchased and placed on road!");
+                            
+                        } else {
+
+                            System.out.println("No road found. Purchase cancelled.");
+                            Alert warn = new Alert(Alert.AlertType.WARNING, "Please build a road first!");
+                            warn.show();
+                            engine.earn(500); 
+                        }
+
+                        capitalLabel.setText("Capital: $" + (int)engine.getBalance());
+
+                    } else {
+                        System.out.println("Not enough capital!");
+                    }
+                }
+            });
+        });
+
         Button routeBtn = new Button("Route\nEditor");
         Button lightBtn = new Button("Traffic\nLights");
 
