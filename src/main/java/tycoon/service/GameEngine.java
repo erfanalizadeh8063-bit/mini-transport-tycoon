@@ -1,9 +1,11 @@
 package tycoon.service;
 
 import java.util.List;
-import java.util.ArrayList;
+
 import tycoon.model.Vehicle;
 import tycoon.model.WorldMap;
+
+import java.util.ArrayList;
 
 /**
  * Orchestrates the simulation logic and time management.

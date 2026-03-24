@@ -2,23 +2,48 @@ package tycoon.ui;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.image.Image;
 import tycoon.model.*;
 import java.util.List;
 
 public class GameRenderer {
-    private static final int TILE_SIZE = 64;
+    private static final int TILE_SIZE = 64; 
 
-    private static final double[][] TREE_OFFSETS = {
-        {0.2, 0.2}, {0.55, 0.2}, {0.2, 0.55}, {0.55, 0.55}
-    };
+    private Image grassImg;
+    private Image roadImg;
+    private Image cityImg;
+    private Image factoryImg;
+    private Image treeImg; 
+    private Image carImg; 
+
+    public GameRenderer() {
+        try {
+            grassImg = new Image(getClass().getResourceAsStream("/grass.png"));
+            roadImg = new Image(getClass().getResourceAsStream("/road.png"));
+            cityImg = new Image(getClass().getResourceAsStream("/city.jpg"));
+            factoryImg = new Image(getClass().getResourceAsStream("/factory.png"));
+            treeImg = new Image(getClass().getResourceAsStream("/tree.png")); 
+            carImg = new Image(getClass().getResourceAsStream("/car.png")); 
+        } catch (Exception e) {
+            System.err.println("Error loading sprites: " + e.getMessage());
+        }
+    }
 
     public void render(GraphicsContext gc, WorldMap map, List<Vehicle> vehicles) {
-        gc.setFill(Color.LIGHTBLUE); //  배경
+
+        gc.setFill(Color.LIGHTBLUE); 
         gc.fillRect(0, 0, map.getWidth() * TILE_SIZE, map.getHeight() * TILE_SIZE);
 
         for (int x = 0; x < map.getWidth(); x++) {
             for (int y = 0; y < map.getHeight(); y++) {
-                drawTile(gc, map.getTile(x, y), x, y);
+                drawBaseTile(gc, map.getTile(x, y), x, y);
+            }
+        }
+
+
+        for (int x = 0; x < map.getWidth(); x++) {
+            for (int y = 0; y < map.getHeight(); y++) {
+                drawBuildingTile(gc, map.getTile(x, y), x, y);
             }
         }
 
@@ -27,53 +52,67 @@ public class GameRenderer {
         }
     }
 
-    private void drawTile(GraphicsContext gc, Tile tile, int x, int y) {
+    private void drawBaseTile(GraphicsContext gc, Tile tile, int x, int y) {
         int px = x * TILE_SIZE;
         int py = y * TILE_SIZE;
 
-        if (tile instanceof RoadTile) {
-            gc.setFill(Color.GRAY);
-        } else if (tile instanceof City) {
-            gc.setFill(Color.DARKSLATEGRAY);
-        } else if (tile instanceof Industry) {
-            gc.setFill(Color.SADDLEBROWN);
-        } else if (tile instanceof ForestTile forest) {
-            gc.setFill(Color.web("#91cf60"));
+
+        if (grassImg != null && !grassImg.isError()) {
+            gc.drawImage(grassImg, px, py, TILE_SIZE, TILE_SIZE);
+        } else {
+            gc.setFill(Color.web("#91cf60")); 
             gc.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-            drawTrees(gc, px, py, forest.getTreeCount());
-            gc.setStroke(Color.web("#000000", 0.05));
-            gc.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
-            return;
-        } else {
-            gc.setFill(Color.web("#91cf60"));
         }
 
-        gc.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-        if (tile instanceof RoadTile roadTile && roadTile.hasJunction()) {
-    if (roadTile.getJunction().hasLight()) {
-        if (roadTile.getJunction().getTrafficLight().getState() == SignalPhase.NS_GREEN) {
-            gc.setFill(Color.LIMEGREEN);
-        } else {
-            gc.setFill(Color.ORANGE);
-        }
-    } else {
-        gc.setFill(Color.RED);
-    }
 
-    gc.fillOval(px + TILE_SIZE * 0.3, py + TILE_SIZE * 0.3, TILE_SIZE * 0.4, TILE_SIZE * 0.4);
-    }
+        if (tile instanceof City || tile instanceof Industry) {
+            return; 
+        }
+
+
+        if (tile instanceof EmptyTile) {
+            int trees = ((EmptyTile) tile).getTreeCount();
+            if (trees > 0 && treeImg != null && !treeImg.isError()) {
+                gc.drawImage(treeImg, px + 10, py + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+            }
+        }
+
+        if (tile instanceof RoadTile) {
+            if (roadImg != null && !roadImg.isError()) {
+                gc.drawImage(roadImg, px, py, TILE_SIZE, TILE_SIZE);
+            }
+        }
         
-        
+
         gc.setStroke(Color.web("#000000", 0.05));
         gc.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
     }
 
-    private void drawTrees(GraphicsContext gc, int px, int py, int count) {
-        gc.setFill(Color.DARKGREEN);
-        for (int i = 0; i < count; i++) {
-            double tx = px + TREE_OFFSETS[i][0] * TILE_SIZE;
-            double ty = py + TREE_OFFSETS[i][1] * TILE_SIZE;
-            gc.fillOval(tx, ty, TILE_SIZE * 0.22, TILE_SIZE * 0.22);
+    private void drawBuildingTile(GraphicsContext gc, Tile tile, int x, int y) {
+        int px = x * TILE_SIZE;
+        int py = y * TILE_SIZE;
+
+        if (tile instanceof City) {
+            Vector2 origin = tile.getPos();
+            if (origin.x() == x && origin.y() == y) {
+                if (cityImg != null && !cityImg.isError()) {
+                    gc.drawImage(cityImg, px, py, TILE_SIZE * 3, TILE_SIZE * 3);
+                } else {
+                    gc.setFill(Color.DARKSLATEGRAY); 
+                    gc.fillRect(px, py, TILE_SIZE * 3, TILE_SIZE * 3);
+                }
+            }
+        } 
+        else if (tile instanceof Industry) {
+            Vector2 origin = tile.getPos();
+            if (origin.x() == x && origin.y() == y) {
+                if (factoryImg != null && !factoryImg.isError()) {
+                    gc.drawImage(factoryImg, px, py, TILE_SIZE * 2, TILE_SIZE * 2);
+                } else {
+                    gc.setFill(Color.SADDLEBROWN); 
+                    gc.fillRect(px, py, TILE_SIZE * 2, TILE_SIZE * 2);
+                }
+            }
         }
     }
 
@@ -93,9 +132,11 @@ public class GameRenderer {
             drawY += (endY - drawY) * p;
         }
 
-        gc.setFill(Color.YELLOW);
-        gc.fillOval(drawX + TILE_SIZE*0.2, drawY + TILE_SIZE*0.2, TILE_SIZE*0.6, TILE_SIZE*0.6);
-        gc.setStroke(Color.BLACK);
-        gc.strokeOval(drawX + TILE_SIZE*0.2, drawY + TILE_SIZE*0.2, TILE_SIZE*0.6, TILE_SIZE*0.6);
+        if (carImg != null && !carImg.isError()) {
+            gc.drawImage(carImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+        } else {
+            gc.setFill(Color.YELLOW);
+            gc.fillOval(drawX + TILE_SIZE*0.2, drawY + TILE_SIZE*0.2, TILE_SIZE*0.6, TILE_SIZE*0.6);
+        }
     }
 }
