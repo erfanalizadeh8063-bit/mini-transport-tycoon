@@ -6,7 +6,11 @@ import tycoon.model.*;
 import java.util.List;
 
 public class GameRenderer {
-    private static final int TILE_SIZE = 64; // 与 Window 保持一致
+    private static final int TILE_SIZE = 64;
+
+    private static final double[][] TREE_OFFSETS = {
+        {0.2, 0.2}, {0.55, 0.2}, {0.2, 0.55}, {0.55, 0.55}
+    };
 
     public void render(GraphicsContext gc, WorldMap map, List<Vehicle> vehicles) {
         gc.setFill(Color.LIGHTBLUE); //  배경
@@ -33,8 +37,15 @@ public class GameRenderer {
             gc.setFill(Color.DARKSLATEGRAY);
         } else if (tile instanceof Industry) {
             gc.setFill(Color.SADDLEBROWN);
+        } else if (tile instanceof ForestTile forest) {
+            gc.setFill(Color.web("#91cf60"));
+            gc.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            drawTrees(gc, px, py, forest.getTreeCount());
+            gc.setStroke(Color.web("#000000", 0.05));
+            gc.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+            return;
         } else {
-            gc.setFill(Color.web("#91cf60")); 
+            gc.setFill(Color.web("#91cf60"));
         }
 
         gc.fillRect(px, py, TILE_SIZE, TILE_SIZE);
@@ -55,6 +66,15 @@ public class GameRenderer {
         
         gc.setStroke(Color.web("#000000", 0.05));
         gc.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+    }
+
+    private void drawTrees(GraphicsContext gc, int px, int py, int count) {
+        gc.setFill(Color.DARKGREEN);
+        for (int i = 0; i < count; i++) {
+            double tx = px + TREE_OFFSETS[i][0] * TILE_SIZE;
+            double ty = py + TREE_OFFSETS[i][1] * TILE_SIZE;
+            gc.fillOval(tx, ty, TILE_SIZE * 0.22, TILE_SIZE * 0.22);
+        }
     }
 
     private void drawVehicle(GraphicsContext gc, Vehicle v) {
