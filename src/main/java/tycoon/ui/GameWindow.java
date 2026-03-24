@@ -16,35 +16,34 @@ import tycoon.model.*;
 import tycoon.service.GameEngine;
 
 public class GameWindow extends Application {
-    private static final int TILE_SIZE = 64; 
-    
+    private static final int TILE_SIZE = 64;
+
     private Stage primaryStage;
     private Scene mainScene;
-    
+
     private WorldMap worldMap;
     private GameEngine engine;
     private GameRenderer renderer;
     private AnimationTimer gameLoop;
-    
 
     private Label capitalLabel;
     private Label timeLabel;
-    private VBox detailPanel; 
+    private VBox detailPanel;
     private boolean isBuildMode = false;
-    private double simulatedTime = 0; 
+    private double simulatedTime = 0;
 
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-        
+
         // 初始化一个空场景，大小设为 1440x900
         mainScene = new Scene(new Pane(), 1440, 900);
         primaryStage.setTitle("Mini Transport Tycoon");
         primaryStage.setScene(mainScene);
-        
+
         // 启动时首先显示主菜单
         showMainMenu();
-        
+
         primaryStage.show();
     }
 
@@ -53,11 +52,11 @@ public class GameWindow extends Application {
     // ==========================================
     private void showMainMenu() {
         StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: #cccccc;"); 
+        root.setStyle("-fx-background-color: #cccccc;");
 
         VBox menuBox = new VBox(20);
         menuBox.setAlignment(Pos.CENTER);
-        menuBox.setMaxSize(400, 300); 
+        menuBox.setMaxSize(400, 300);
         menuBox.setStyle("-fx-background-color: #d9d9d9; -fx-border-color: black; -fx-border-width: 1px;");
 
         Label title = new Label("Main menu");
@@ -65,16 +64,19 @@ public class GameWindow extends Application {
 
         Button newGameBtn = new Button("New Game");
         newGameBtn.setPrefWidth(200);
-        newGameBtn.setStyle("-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
+        newGameBtn.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
         newGameBtn.setOnAction(e -> startNewGame());
 
         Button loadGameBtn = new Button("Load Saved Game");
         loadGameBtn.setPrefWidth(200);
-        loadGameBtn.setStyle("-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
+        loadGameBtn.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
 
         Button exitBtn = new Button("Exit to the desktop");
         exitBtn.setPrefWidth(200);
-        exitBtn.setStyle("-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
+        exitBtn.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
         exitBtn.setOnAction(e -> Platform.exit());
 
         menuBox.getChildren().addAll(title, newGameBtn, loadGameBtn, exitBtn);
@@ -88,7 +90,8 @@ public class GameWindow extends Application {
     // ==========================================
     private void showGameOver() {
 
-        if (gameLoop != null) gameLoop.stop();
+        if (gameLoop != null)
+            gameLoop.stop();
 
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #cccccc;");
@@ -119,7 +122,7 @@ public class GameWindow extends Application {
     // 3. Game UI
     // ==========================================
     private void startNewGame() {
-        worldMap = new WorldMap(30, 20); 
+        worldMap = new WorldMap(30, 20);
         engine = new GameEngine(worldMap);
         renderer = new GameRenderer();
         simulatedTime = 0;
@@ -127,6 +130,12 @@ public class GameWindow extends Application {
 
         worldMap.setTile(5, 5, new City(new Vector2(5, 5), 0.0, worldMap, "Budapest", 1000));
         worldMap.setTile(15, 5, new Industry(new Vector2(15, 5), 0.0, worldMap, "Lumber Mill", CargoType.GOODS_A));
+
+        RoadTile trafficLightRoad = new RoadTile(new Vector2(10, 5), 0.0, worldMap, 50.0);
+        Junction junction = new Junction();
+        junction.installTrafficLight(new TrafficLight());
+        trafficLightRoad.setJunction(junction);
+        worldMap.setTile(10, 5, trafficLightRoad);
 
         BorderPane gameRoot = new BorderPane();
         gameRoot.setTop(createTopBar());
@@ -138,11 +147,12 @@ public class GameWindow extends Application {
         scrollPane.setContent(canvas);
 
         AnchorPane floatingUI = new AnchorPane();
-        floatingUI.setPickOnBounds(false); 
+        floatingUI.setPickOnBounds(false);
 
         VBox miniMap = new VBox();
         miniMap.setPrefSize(200, 200);
-        miniMap.setStyle("-fx-background-color: rgba(200, 200, 200, 0.8); -fx-border-color: black; -fx-alignment: center;");
+        miniMap.setStyle(
+                "-fx-background-color: rgba(200, 200, 200, 0.8); -fx-border-color: black; -fx-alignment: center;");
         miniMap.getChildren().add(new Label("Mini Map\n(Coming Soon)"));
         AnchorPane.setBottomAnchor(miniMap, 20.0);
         AnchorPane.setRightAnchor(miniMap, 20.0);
@@ -150,30 +160,29 @@ public class GameWindow extends Application {
         detailPanel = new VBox(10);
         detailPanel.setPrefWidth(180);
         detailPanel.setPadding(new Insets(10));
-        detailPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-border-color: black; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 5);");
+        detailPanel.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.95); -fx-border-color: black; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 5);");
         detailPanel.setVisible(false);
 
         floatingUI.getChildren().addAll(miniMap, detailPanel);
         centerContainer.getChildren().addAll(scrollPane, floatingUI);
         gameRoot.setCenter(centerContainer);
 
-
         mainScene.setRoot(gameRoot);
-
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
+
             @Override
             public void handle(long now) {
                 if (lastUpdate > 0) {
                     double dt = (now - lastUpdate) / 1_000_000_000.0;
-                    engine.tick(dt); 
+                    engine.tick(dt);
                     renderer.render(canvas.getGraphicsContext2D(), worldMap, engine.getVehicles());
-                    
-                    capitalLabel.setText("Capital: $" + (int)engine.getBalance());
-                    simulatedTime += dt * engine.getSimulationSpeed();
-                    timeLabel.setText(String.format("Time: Day %d", (int)simulatedTime));
 
+                    capitalLabel.setText("Capital: $" + (int) engine.getBalance());
+                    simulatedTime += dt * engine.getSimulationSpeed();
+                    timeLabel.setText(String.format("Time: Day %d", (int) simulatedTime));
 
                     if (engine.getBalance() < 0) {
                         showGameOver();
@@ -190,7 +199,7 @@ public class GameWindow extends Application {
             Tile tile = worldMap.getTile(x, y);
 
             if (isBuildMode && tile instanceof EmptyTile) {
-                engine.spend(100); 
+                engine.spend(100);
                 worldMap.setTile(x, y, new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0));
                 detailPanel.setVisible(false);
             } else {
@@ -200,12 +209,11 @@ public class GameWindow extends Application {
                     detailPanel.setLayoutY(event.getSceneY() - 50);
                     detailPanel.setVisible(true);
                 } else {
-                    detailPanel.setVisible(false); 
+                    detailPanel.setVisible(false);
                 }
             }
         });
     }
-
 
     private HBox createTopBar() {
         HBox top = new HBox(40);
@@ -228,10 +236,10 @@ public class GameWindow extends Application {
         play.setOnAction(e -> engine.setSimulationSpeed(1));
         Button fast = new Button(">>>");
         fast.setOnAction(e -> engine.setSimulationSpeed(4));
-        
-        Button close = new Button("X"); 
+
+        Button close = new Button("X");
         close.setOnAction(e -> showMainMenu());
-        
+
         speedBox.getChildren().addAll(pause, play, fast, close);
 
         Region spacer1 = new Region();
@@ -251,11 +259,20 @@ public class GameWindow extends Application {
         Button buildBtn = new Button("Build\nRoad");
         buildBtn.setStyle("-fx-border-color: black;");
         buildBtn.setOnAction(e -> isBuildMode = !isBuildMode);
-        
+
         Button stopBtn = new Button("Place\nStop");
         Button vehicleBtn = new Button("Buy\nVehicle");
         Button routeBtn = new Button("Route\nEditor");
         Button lightBtn = new Button("Traffic\nLights");
+        // to change the color of the traffic light
+
+        lightBtn.setOnAction(e -> {
+            Tile tile = worldMap.getTile(5, 10);
+            if (tile instanceof RoadTile roadTile && roadTile.hasJunction() && roadTile.getJunction().hasLight()) {
+
+                roadTile.getJunction().getTrafficLight().switchState();
+            }
+        });
 
         bottom.getChildren().addAll(buildBtn, stopBtn, vehicleBtn, routeBtn, lightBtn);
         return bottom;
@@ -267,19 +284,17 @@ public class GameWindow extends Application {
         title.setStyle("-fx-alignment: center; -fx-border-bottom-color: black; -fx-border-bottom-width: 1px;");
         title.setMaxWidth(Double.MAX_VALUE);
         detailPanel.getChildren().add(title);
-        
+
         if (f instanceof City) {
             City c = (City) f;
             detailPanel.getChildren().addAll(
-                new Label("Demand : Passengers"),
-                new Label("City Growth : " + c.getDisplayPopulation())
-            );
+                    new Label("Demand : Passengers"),
+                    new Label("City Growth : " + c.getDisplayPopulation()));
         } else if (f instanceof Industry) {
             detailPanel.getChildren().addAll(
-                new Label("Facility : " + f.getName()),
-                new Label("Stockpile : "),
-                new Label("    Goods_A : " + f.getStockpile(CargoType.GOODS_A))
-            );
+                    new Label("Facility : " + f.getName()),
+                    new Label("Stockpile : "),
+                    new Label("    Goods_A : " + f.getStockpile(CargoType.GOODS_A)));
         }
     }
 }

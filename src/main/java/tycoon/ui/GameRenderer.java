@@ -38,6 +38,19 @@ public class GameRenderer {
         }
 
         gc.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+        if (tile instanceof RoadTile roadTile && roadTile.hasJunction()) {
+    if (roadTile.getJunction().hasLight()) {
+        if (roadTile.getJunction().getTrafficLight().getState() == SignalPhase.NS_GREEN) {
+            gc.setFill(Color.LIMEGREEN);
+        } else {
+            gc.setFill(Color.ORANGE);
+        }
+    } else {
+        gc.setFill(Color.RED);
+    }
+
+    gc.fillOval(px + TILE_SIZE * 0.3, py + TILE_SIZE * 0.3, TILE_SIZE * 0.4, TILE_SIZE * 0.4);
+    }
         
         
         gc.setStroke(Color.web("#000000", 0.05));
