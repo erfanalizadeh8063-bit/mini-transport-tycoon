@@ -231,6 +231,7 @@ public class GameWindow extends Application {
                 if (lastUpdate > 0) {
                     double dt = (now - lastUpdate) / 1_000_000_000.0;
                     engine.tick(dt);
+                    worldMap.updateTrafficLights(dt);
 
                     // [Fix] Update Time UI
                     simulatedTime += dt * engine.getSimulationSpeed();
