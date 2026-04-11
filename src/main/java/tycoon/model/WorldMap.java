@@ -7,9 +7,9 @@ import java.util.List;
  * Manages the 2D grid of tiles and provides spatial queries.
  */
 public class WorldMap {
-    private int width;  // UML: width: int
-    private int height; // UML: height: int
-    private Tile[][] grid; // UML: WorldMap contains Tiles
+    private int width;
+    private int height;
+    private Tile[][] grid;
 
     public WorldMap(int width, int height) {
         this.width = width;
@@ -18,9 +18,6 @@ public class WorldMap {
         initializeEmptyMap();
     }
 
-    /**
-     * Fills the map with EmptyTiles at height 0 by default.
-     */
     private void initializeEmptyMap() {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -29,9 +26,6 @@ public class WorldMap {
         }
     }
 
-    /**
-     * Returns the tile at specific coordinates if within bounds.
-     */
     public Tile getTile(int x, int y) {
         if (x >= 0 && x < width && y >= 0 && y < height) {
             return grid[x][y];
@@ -39,23 +33,56 @@ public class WorldMap {
         return null;
     }
 
-    /**
-     * Updates a specific tile in the grid.
-     */
     public void setTile(int x, int y, Tile tile) {
         if (x >= 0 && x < width && y >= 0 && y < height) {
             grid[x][y] = tile;
         }
     }
 
-    /**
-     * Returns adjacent tiles for pathfinding or connectivity checks.
-     */
+    public void placeRoad(int x, int y, double speedLimit) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            return;
+        }
+
+        RoadTile road = new RoadTile(new Vector2(x, y), 0.0, this, speedLimit);
+        setTile(x, y, road);
+        refreshRoadConnectivityAround(x, y);
+    }
+
+    public void refreshRoadConnectivityAround(int x, int y) {
+        refreshRoadConnectivityAt(x, y);
+
+        for (Direction dir : Direction.values()) {
+            int nx = x + dir.dx();
+            int ny = y + dir.dy();
+            refreshRoadConnectivityAt(nx, ny);
+        }
+    }
+
+    public void refreshRoadConnectivityAt(int x, int y) {
+        Tile tile = getTile(x, y);
+        if (!(tile instanceof RoadTile road)) {
+            return;
+        }
+
+        road.clearConnections();
+
+        for (Direction dir : Direction.values()) {
+            int nx = x + dir.dx();
+            int ny = y + dir.dy();
+            Tile neighbor = getTile(nx, ny);
+
+            if (neighbor instanceof RoadTile) {
+                road.addConnection(dir);
+            }
+        }
+    }
+
     public List<Tile> neighbors(Tile tile) {
         List<Tile> result = new ArrayList<>();
         Vector2 pos = tile.getPos();
-        
-        int[][] directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+        int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
         for (int[] d : directions) {
             Tile neighbor = getTile(pos.x() + d[0], pos.y() + d[1]);
             if (neighbor != null) {
@@ -65,13 +92,18 @@ public class WorldMap {
         return result;
     }
 
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 
     public void setFacility(int startX, int startY, int width, int height, Facility facility) {
         for (int x = startX; x < startX + width; x++) {
             for (int y = startY; y < startY + height; y++) {
-               setTile(x, y, facility);
+                setTile(x, y, facility);
             }
         }
     }
