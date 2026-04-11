@@ -1,33 +1,51 @@
 package tycoon.model;
 
 public class TrafficLight {
-    private SignalPhase state;
+    private SignalPhase phase;
+    private double greenNS;
+    private double greenEW;
+    private double timer;
 
     public TrafficLight() {
-        this.state = SignalPhase.NS_GREEN;
+        this.phase = SignalPhase.NS_GREEN;
+        this.greenNS = 5.0;
+        this.greenEW = 5.0;
+        this.timer = 0.0;
     }
 
-    public SignalPhase getState() {
-        return state;
+    public void switchPhase() {
+        phase = (phase == SignalPhase.NS_GREEN)
+                ? SignalPhase.EW_GREEN
+                : SignalPhase.NS_GREEN;
+        timer = 0.0;
     }
 
-    public void setState(SignalPhase state) {
-        this.state = state;
+    public boolean canPass(Direction dir) {
+        if (dir == null) {
+            return false;
+        }
+
+        return switch (phase) {
+            case NS_GREEN -> dir == Direction.N || dir == Direction.S;
+            case EW_GREEN -> dir == Direction.E || dir == Direction.W;
+        };
     }
 
-    public void switchState() {
-        if (state == SignalPhase.NS_GREEN) {
-            state = SignalPhase.EW_GREEN;
-        } else {
-            state = SignalPhase.NS_GREEN;
+    public void setTimings(double ns, double ew) {
+        this.greenNS = ns;
+        this.greenEW = ew;
+    }
+
+    public void update(double dt) {
+        timer += dt;
+
+        double limit = (phase == SignalPhase.NS_GREEN) ? greenNS : greenEW;
+        if (timer >= limit) {
+            switchPhase();
         }
     }
 
-    public boolean canPass(Direction direction) {
-        if (state == SignalPhase.NS_GREEN) {
-            return direction == Direction.N || direction == Direction.S;
-        } else {
-            return direction == Direction.E || direction == Direction.W;
-        }
+    public SignalPhase getPhase() {
+        return phase;
     }
 }

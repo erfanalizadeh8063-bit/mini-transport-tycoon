@@ -132,6 +132,11 @@ public class GameRenderer {
             gc.setStroke(Color.GOLD);
             gc.setLineWidth(2.5);
             gc.strokeRect(px + center - halfRoad + 4, py + center - halfRoad + 4, roadWidth - 8, roadWidth - 8);
+
+            if (road.getJunction().hasLight()) {
+                gc.setFill(Color.RED);
+                gc.fillOval(px + center - 6, py + center - 6, 12, 12);
+            }
         }
     }
 

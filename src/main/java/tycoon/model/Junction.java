@@ -7,8 +7,8 @@ public class Junction {
         this.trafficLight = null;
     }
 
-    public void installTrafficLight(TrafficLight trafficLight) {
-        this.trafficLight = trafficLight;
+    public void install(TrafficLight light) {
+        this.trafficLight = light;
     }
 
     public boolean hasLight() {
