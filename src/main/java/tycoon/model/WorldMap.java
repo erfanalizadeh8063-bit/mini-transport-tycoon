@@ -107,4 +107,18 @@ public class WorldMap {
             }
         }
     }
+
+    public void updateTrafficLights(double dt) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Tile tile = grid[x][y];
+                if (tile instanceof RoadTile road && road.hasJunction()) {
+                    Junction junction = road.getJunction();
+                    if (junction.hasLight()) {
+                        junction.getTrafficLight().update(dt);
+                    }
+                }
+            }
+        }
+    }
 }

@@ -37,6 +37,7 @@ public class GameWindow extends Application {
     private Canvas minimapCanvas;
     private MinimapRenderer minimapRenderer;
     private ScrollPane scrollPane;
+    private boolean isTrafficLightMode = false;
 
     // Test version
     @Override
@@ -230,6 +231,7 @@ public class GameWindow extends Application {
                 if (lastUpdate > 0) {
                     double dt = (now - lastUpdate) / 1_000_000_000.0;
                     engine.tick(dt);
+                    worldMap.updateTrafficLights(dt);
 
                     // [Fix] Update Time UI
                     simulatedTime += dt * engine.getSimulationSpeed();
@@ -251,6 +253,24 @@ public class GameWindow extends Application {
             int x = (int) (event.getX() / TILE_SIZE);
             int y = (int) (event.getY() / TILE_SIZE);
             Tile tile = worldMap.getTile(x, y);
+
+            if (isTrafficLightMode) {
+                if (tile instanceof RoadTile road && road.hasJunction()) {
+                    Junction junction = road.getJunction();
+
+                    if (!junction.hasLight()) {
+                        junction.install(new TrafficLight());
+                        System.out.println("Traffic light installed at (" + x + "," + y + ")");
+                    } else {
+                        System.out.println("Traffic light already exists at (" + x + "," + y + ")");
+                    }
+                } else {
+                    System.out.println("Traffic lights can only be installed on valid junctions.");
+                }
+
+                isTrafficLightMode = false;
+                return;
+            }
 
             if (isBuildMode && tile instanceof EmptyTile) {
                 EmptyTile emptyTile = (EmptyTile) tile;
@@ -369,6 +389,10 @@ public class GameWindow extends Application {
 
         Button routeBtn = new Button("Route\nEditor");
         Button lightBtn = new Button("Traffic\nLights");
+        lightBtn.setOnAction(e -> {
+            isBuildMode = false;
+            isTrafficLightMode = true;
+        });
 
         bottom.getChildren().addAll(buildBtn, stopBtn, vehicleBtn, routeBtn, lightBtn);
         return bottom;

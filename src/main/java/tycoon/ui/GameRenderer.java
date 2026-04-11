@@ -132,6 +132,27 @@ public class GameRenderer {
             gc.setStroke(Color.GOLD);
             gc.setLineWidth(2.5);
             gc.strokeRect(px + center - halfRoad + 4, py + center - halfRoad + 4, roadWidth - 8, roadWidth - 8);
+
+            if (road.getJunction().hasLight()) {
+                TrafficLight light = road.getJunction().getTrafficLight();
+
+                double boxW = 20;
+                double boxH = 14;
+                double boxX = px + center - boxW / 2;
+                double boxY = py + center - boxH / 2;
+
+                gc.setFill(Color.BLACK);
+                gc.fillRoundRect(boxX, boxY, boxW, boxH, 4, 4);
+
+                Color nsColor = (light.getPhase() == SignalPhase.NS_GREEN) ? Color.LIMEGREEN : Color.RED;
+                Color ewColor = (light.getPhase() == SignalPhase.EW_GREEN) ? Color.LIMEGREEN : Color.RED;
+
+                gc.setFill(nsColor);
+                gc.fillOval(px + center - 3, py + center - 6, 6, 6);
+
+                gc.setFill(ewColor);
+                gc.fillOval(px + center + 3, py + center, 6, 6);
+            }
         }
     }
 
