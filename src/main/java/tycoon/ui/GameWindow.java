@@ -257,7 +257,7 @@ public class GameWindow extends Application {
                 double cost = (emptyTile.getTreeCount() > 0) ? 200.0 : 100.0;
 
                 if (engine.spendMoney(cost)) {
-                    worldMap.setTile(x, y, new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0));
+                    worldMap.placeRoad(x, y, 50.0);
                     detailPanel.setVisible(false);
                     capitalLabel.setText("Capital: $" + (int) engine.getBalance());
                 } else {
