@@ -1,6 +1,6 @@
 package tycoon.model;
-
-public class Junction {
+import java.io.Serializable;
+public class Junction  implements Serializable {
     private TrafficLight trafficLight;
 
     public Junction() {

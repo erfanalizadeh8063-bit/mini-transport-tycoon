@@ -1,6 +1,5 @@
 package tycoon.model;
-
-public class EmptyTile extends Tile {
+public class EmptyTile extends Tile{
     
     private int treeCount = 0; 
 

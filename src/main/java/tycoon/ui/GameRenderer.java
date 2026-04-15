@@ -12,16 +12,20 @@ public class GameRenderer {
     private Image grassImg;
     private Image cityImg;
     private Image factoryImg;
-    private Image treeImg;
-    private Image carImg;
+    private Image treeImg; 
+    
+    private Image busImg; 
+    private Image truckImg; 
 
     public GameRenderer() {
         try {
             grassImg = new Image(getClass().getResourceAsStream("/grass.png"));
             cityImg = new Image(getClass().getResourceAsStream("/city.jpg"));
             factoryImg = new Image(getClass().getResourceAsStream("/factory.png"));
-            treeImg = new Image(getClass().getResourceAsStream("/tree.png"));
-            carImg = new Image(getClass().getResourceAsStream("/car.png"));
+            treeImg = new Image(getClass().getResourceAsStream("/tree.png")); 
+            
+            busImg = new Image(getClass().getResourceAsStream("/bus.png")); 
+            truckImg = new Image(getClass().getResourceAsStream("/truck.png")); 
         } catch (Exception e) {
             System.err.println("Error loading sprites: " + e.getMessage());
         }
@@ -200,11 +204,26 @@ public class GameRenderer {
             drawY += (endY - drawY) * p;
         }
 
-        if (carImg != null && !carImg.isError()) {
-            gc.drawImage(carImg, drawX + TILE_SIZE * 0.15, drawY + TILE_SIZE * 0.15, TILE_SIZE * 0.7, TILE_SIZE * 0.7);
-        } else {
-            gc.setFill(Color.YELLOW);
-            gc.fillOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+        if (v instanceof Truck) {
+            if (truckImg != null && !truckImg.isError()) {
+                gc.drawImage(truckImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+            } else {
+                gc.setFill(Color.web("#FF9AA2")); 
+                gc.fillOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(3);
+                gc.strokeOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            }
+        } else if (v instanceof Bus) {
+            if (busImg != null && !busImg.isError()) {
+                gc.drawImage(busImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+            } else {
+                gc.setFill(Color.web("#A8D8EA")); 
+                gc.fillOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(3);
+                gc.strokeOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            }
         }
     }
 }

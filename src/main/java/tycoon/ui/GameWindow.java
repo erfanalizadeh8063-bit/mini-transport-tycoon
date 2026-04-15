@@ -7,15 +7,16 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.scene.paint.Color;
 import tycoon.model.*;
 import tycoon.service.GameEngine;
+import tycoon.service.SaveManager;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class GameWindow extends Application {
@@ -28,162 +29,164 @@ public class GameWindow extends Application {
     private GameEngine engine;
     private GameRenderer renderer;
     private AnimationTimer gameLoop;
-
+    
+    private double simulatedTime = 0;
     private Label capitalLabel;
     private Label timeLabel;
+    private Label statusLabel; 
     private VBox detailPanel;
-    private boolean isBuildMode = false;
-    private double simulatedTime = 0;
     private Canvas minimapCanvas;
     private MinimapRenderer minimapRenderer;
     private ScrollPane scrollPane;
     private boolean isTrafficLightMode = false;
 
-    // Test version
+    private Facility inspectedFacility = null; 
+
+    private enum ToolMode {
+        INSPECT, BUILD_ROAD, PLACE_STOP, BUY_VEHICLE, TRAFFIC_LIGHT, BULLDOZE
+    }
+    private ToolMode currentTool = ToolMode.INSPECT;
+    private List<Facility> pendingRoute = new ArrayList<>();
+
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-
-        mainScene = new Scene(new Pane(), 1200, 700);
+        mainScene = new Scene(new Pane(), 1440, 900);
         primaryStage.setTitle("Mini Transport Tycoon");
         primaryStage.setScene(mainScene);
-        primaryStage.setMaximized(true);
-
         showMainMenu();
         primaryStage.show();
     }
 
-    // @Override
-    // public void start(Stage primaryStage) {
-    // this.primaryStage = primaryStage;
-
-    // mainScene = new Scene(new Pane(), 1440, 900);
-    // primaryStage.setTitle("Mini Transport Tycoon");
-    // primaryStage.setScene(mainScene);
-
-    // showMainMenu();
-    // primaryStage.show();
-    // }
-
-    // ==========================================
-    // 1. Main Menu
-    // ==========================================
     private void showMainMenu() {
         StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: #cccccc;");
+        root.setStyle("-fx-background-color: #FFF8F0;");
+
+        VBox mainLayout = new VBox(50);
+        mainLayout.setAlignment(Pos.CENTER);
+
+        Label gameTitle = new Label("Mini Transport Tycoon");
+        gameTitle.setStyle("-fx-font-size: 56px; -fx-font-weight: bold; -fx-text-fill: #FF9AA2; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5); -fx-font-family: 'Comic Sans MS', cursive, sans-serif;");
 
         VBox menuBox = new VBox(20);
         menuBox.setAlignment(Pos.CENTER);
-        menuBox.setMaxSize(400, 300);
-        menuBox.setStyle("-fx-background-color: #d9d9d9; -fx-border-color: black; -fx-border-width: 1px;");
+        menuBox.setMaxSize(400, 350);
+        menuBox.setPadding(new Insets(40));
+        menuBox.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 20, 0, 0, 10);");
 
-        Label title = new Label("Main menu");
-        title.setStyle("-fx-font-size: 20px; -fx-padding: 0 0 20 0;");
+        Label subtitle = new Label("~ Welcome to your Tycoon ~");
+        subtitle.setStyle("-fx-font-size: 18px; -fx-text-fill: #A8D8EA; -fx-font-weight: bold; -fx-padding: 0 0 10 0;");
 
-        Button newGameBtn = new Button("New Game");
-        newGameBtn.setPrefWidth(200);
-        newGameBtn.setStyle(
-                "-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
+        Button newGameBtn = createMenuButton("✨ New Game");
         newGameBtn.setOnAction(e -> startNewGame());
 
-        Button loadGameBtn = new Button("Load Saved Game");
-        loadGameBtn.setPrefWidth(200);
-        loadGameBtn.setStyle(
-                "-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
+        Button loadGameBtn = createMenuButton("📁 Load Saved Game");
+        loadGameBtn.setOnAction(e -> {
+            WorldMap loadedMap = null;
+            try { loadedMap = SaveManager.loadGame("savegame.dat"); } catch (Exception ex) {}
+            
+            if (loadedMap != null) {
+                worldMap = loadedMap;
+                engine = new GameEngine(worldMap);
+                setupGameUI(); 
+            } else {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Oops! No saved game found!");
+                alert.show();
+            }
+        });
 
-        Button exitBtn = new Button("Exit to the desktop");
-        exitBtn.setPrefWidth(200);
-        exitBtn.setStyle(
-                "-fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: black; -fx-background-color: transparent;");
+        Button exitBtn = createMenuButton("❌ Exit to Desktop");
         exitBtn.setOnAction(e -> Platform.exit());
 
-        menuBox.getChildren().addAll(title, newGameBtn, loadGameBtn, exitBtn);
-        root.getChildren().add(menuBox);
-
+        menuBox.getChildren().addAll(subtitle, newGameBtn, loadGameBtn, exitBtn);
+        mainLayout.getChildren().addAll(gameTitle, menuBox);
+        root.getChildren().add(mainLayout);
         mainScene.setRoot(root);
     }
 
-    // ==========================================
-    // 2. Game Over
-    // ==========================================
-    private void showGameOver() {
-        if (gameLoop != null)
-            gameLoop.stop();
+    private Button createMenuButton(String text) {
+        Button btn = new Button(text);
+        btn.setPrefWidth(250);
+        btn.setPrefHeight(45);
+        btn.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-background-color: #FFDAC1; -fx-text-fill: #5D4037; -fx-cursor: hand;");
+        return btn;
+    }
 
+    private void showGameOver() {
+        if (gameLoop != null) gameLoop.stop();
         StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: #cccccc;");
+        root.setStyle("-fx-background-color: #FFB7B2;"); 
 
         VBox overBox = new VBox(30);
         overBox.setAlignment(Pos.CENTER);
         overBox.setMaxSize(500, 300);
-        overBox.setStyle("-fx-background-color: #d9d9d9; -fx-border-color: black; -fx-border-width: 1px;");
+        overBox.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 30; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 15, 0, 0, 5);");
 
-        Label title = new Label("Game over");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        Label title = new Label("💸 BANKRUPT! 💸");
+        title.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #E27D60;");
+        Label msg = new Label("Oh no! Your transport company ran out of money.");
+        msg.setStyle("-fx-font-size: 16px; -fx-text-fill: #5D4037;");
 
-        Label msg = new Label("BANKRUPT! Your company has run out of capital.");
-        msg.setStyle("-fx-font-size: 14px;");
-
-        Button closeBtn = new Button("Close");
-        closeBtn.setPrefWidth(100);
-        closeBtn.setStyle("-fx-border-color: black; -fx-background-color: transparent;");
+        Button closeBtn = createMenuButton("Return to Menu");
         closeBtn.setOnAction(e -> showMainMenu());
 
         overBox.getChildren().addAll(title, msg, closeBtn);
         root.getChildren().add(overBox);
-
         mainScene.setRoot(root);
     }
 
-    // ==========================================
-    // 3. Game UI
-    // ==========================================
     private void startNewGame() {
         worldMap = new WorldMap(30, 20);
         engine = new GameEngine(worldMap);
-        renderer = new GameRenderer();
-        simulatedTime = 0;
-        isBuildMode = false;
 
-        // [Logic] City 3x3
+        // 【核心修改】：地图初始化只保留城市和工厂，不自动生成任何马路！
         City budapest = new City(new Vector2(5, 5), 0.0, worldMap, "Budapest", 1000);
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (5 + i < worldMap.getWidth() && 5 + j < worldMap.getHeight()) {
-                    worldMap.setTile(5 + i, 5 + j, budapest);
-                }
+                worldMap.setTile(5 + i, 5 + j, budapest);
             }
         }
 
-        // [Logic] Industry 2x2
         Industry lumberMill = new Industry(new Vector2(15, 5), 0.0, worldMap, "Lumber Mill", CargoType.GOODS_A);
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
-                if (15 + i < worldMap.getWidth() && 5 + j < worldMap.getHeight()) {
-                    worldMap.setTile(15 + i, 5 + j, lumberMill);
-                }
+                worldMap.setTile(15 + i, 5 + j, lumberMill);
             }
         }
-
-        // [Logic] Forests Generation (Compatible with GameRenderer)
+        
         Random rand = new Random();
         for (int x = 0; x < worldMap.getWidth(); x++) {
             for (int y = 0; y < worldMap.getHeight(); y++) {
                 Tile t = worldMap.getTile(x, y);
-                if (t instanceof EmptyTile) {
-                    if (rand.nextDouble() < 0.15) {
-                        int trees = rand.nextInt(4) + 1;
-                        ((EmptyTile) t).setTreeCount(trees);
-                    }
+                if (t instanceof EmptyTile && rand.nextDouble() < 0.15) {
+                    ((EmptyTile) t).setTreeCount(rand.nextInt(4) + 1); 
                 }
             }
         }
 
+        setupGameUI();
+    }
+
+    private void setupGameUI() {
+        renderer = new GameRenderer();
+        simulatedTime = 0;
+        currentTool = ToolMode.INSPECT;
+        pendingRoute.clear();
+        inspectedFacility = null; // 重置
+
         BorderPane gameRoot = new BorderPane();
-        gameRoot.setTop(createTopBar());
+        
+        VBox topArea = new VBox();
+        statusLabel = new Label("✨ Welcome! Start by building roads and placing stops.");
+        statusLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 8; -fx-text-fill: #5D4037;");
+        statusLabel.setMaxWidth(Double.MAX_VALUE);
+        statusLabel.setAlignment(Pos.CENTER);
+        statusLabel.setBackground(new Background(new BackgroundFill(Color.web("#FFDAC1"), CornerRadii.EMPTY, Insets.EMPTY)));
+        
+        topArea.getChildren().addAll(createTopBar(), statusLabel);
+        gameRoot.setTop(topArea);
         gameRoot.setBottom(createBottomBar());
 
-        StackPane centerContainer = new StackPane();
         scrollPane = new ScrollPane();
         Canvas canvas = new Canvas(worldMap.getWidth() * TILE_SIZE, worldMap.getHeight() * TILE_SIZE);
         scrollPane.setContent(canvas);
@@ -192,226 +195,316 @@ public class GameWindow extends Application {
         int mmW = worldMap.getWidth() * MinimapRenderer.cellSize();
         int mmH = worldMap.getHeight() * MinimapRenderer.cellSize();
         minimapCanvas = new Canvas(mmW, mmH);
-        minimapCanvas.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 4, 0, 0, 2);");
-
-        minimapCanvas.setOnMouseClicked(e -> {
-            double fx = e.getX() / mmW;
-            double fy = e.getY() / mmH;
-            scrollPane.setHvalue(fx);
-            scrollPane.setVvalue(fy);
-        });
-
+        
         StackPane miniMapContainer = new StackPane(minimapCanvas);
-        miniMapContainer.setStyle("-fx-background-color: black; -fx-border-color: white; -fx-border-width: 1;");
-
-        AnchorPane floatingUI = new AnchorPane();
-        floatingUI.setPickOnBounds(false);
-
-        AnchorPane.setBottomAnchor(miniMapContainer, 20.0);
-        AnchorPane.setRightAnchor(miniMapContainer, 20.0);
+        miniMapContainer.setStyle("-fx-background-color: #E2F0CB; -fx-border-color: #B5EAD7; -fx-border-width: 4; -fx-border-radius: 5; -fx-background-radius: 5;");
 
         detailPanel = new VBox(10);
         detailPanel.setPrefWidth(180);
-        detailPanel.setPadding(new Insets(10));
-        detailPanel.setStyle(
-                "-fx-background-color: rgba(255, 255, 255, 0.95); -fx-border-color: black; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 5);");
+        detailPanel.setPadding(new Insets(15));
+        detailPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: #FFB7B2; -fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);");
         detailPanel.setVisible(false);
 
+        AnchorPane floatingUI = new AnchorPane();
+        floatingUI.setPickOnBounds(false);
+        AnchorPane.setBottomAnchor(miniMapContainer, 20.0);
+        AnchorPane.setRightAnchor(miniMapContainer, 20.0);
         floatingUI.getChildren().addAll(miniMapContainer, detailPanel);
-        centerContainer.getChildren().addAll(scrollPane, floatingUI);
-        gameRoot.setCenter(centerContainer);
 
+        StackPane centerContainer = new StackPane(scrollPane, floatingUI);
+        gameRoot.setCenter(centerContainer);
         mainScene.setRoot(gameRoot);
+
+        canvas.setOnMouseClicked(event -> {
+            int x = (int) (event.getX() / TILE_SIZE);
+            int y = (int) (event.getY() / TILE_SIZE);
+            if (x < 0 || x >= worldMap.getWidth() || y < 0 || y >= worldMap.getHeight()) return;
+            
+            Tile tile = worldMap.getTile(x, y);
+
+            switch (currentTool) {
+                case INSPECT:
+                    if (tile instanceof Facility) {
+                        inspectedFacility = (Facility) tile; // 【记录】
+                        updateDetailPanel(inspectedFacility);
+                        detailPanel.setLayoutX(event.getSceneX() + 20);
+                        detailPanel.setLayoutY(event.getSceneY() - 50);
+                        detailPanel.setVisible(true);
+                        updateStatus("🔍 Inspecting: " + ((Facility) tile).getName());
+                    } else {
+                        inspectedFacility = null; // 【清空】
+                        detailPanel.setVisible(false);
+                        updateStatus("🌿 Looking at tile (" + x + "," + y + ")");
+                    }
+                    break;
+
+                case BUILD_ROAD:
+                    if (tile instanceof EmptyTile) {
+                        double cost = (((EmptyTile) tile).getTreeCount() > 0) ? 200 : 100;
+                        if (engine.spendMoney(cost)) {
+                            worldMap.setTile(x, y, new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0));
+                            updateStatus("🔨 Road built! Spent $" + (int)cost);
+                        } else updateStatus("❌ Oops! Not enough coins to build a road.");
+                    } else updateStatus("🌱 You can only build roads on empty land!");
+                    break;
+
+                case PLACE_STOP:
+                    if (tile instanceof EmptyTile) {
+                        if (engine.spendMoney(200)) {
+                            RoadTile stop = new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0);
+                            worldMap.setTile(x, y, stop);
+                            
+                            // 检查四周有没有建筑，有的话就绑定大门！
+                            int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+                            for(int[] d : dirs) {
+                                int nx = x + d[0]; int ny = y + d[1];
+                                if (nx >= 0 && nx < worldMap.getWidth() && ny >= 0 && ny < worldMap.getHeight()) {
+                                    if (worldMap.getTile(nx, ny) instanceof Facility f) {
+                                        f.setAccessTile(stop);
+                                        updateStatus("🚏 Stop placed & magically connected to " + f.getName() + "!");
+                                        return;
+                                    }
+                                }
+                            }
+                            updateStatus("🚏 Stop placed, but it's a bit lonely here.");
+                        } else updateStatus("❌ Oops! Not enough coins for a Stop.");
+                    }
+                    break;
+
+                case TRAFFIC_LIGHT:
+                    if (tile instanceof RoadTile) {
+                        if (engine.spendMoney(50)) updateStatus("🚦 Traffic light installed!");
+                        else updateStatus("❌ Not enough coins for a Traffic Light.");
+                    }
+                    break;
+
+                case BULLDOZE:
+                    // 【新增】：推土机逻辑
+                    if (tile instanceof RoadTile) {
+                        if (engine.spendMoney(50)) { // 拆迁费 50 块
+                            worldMap.setTile(x, y, new EmptyTile(new Vector2(x, y), 0.0, worldMap));
+                            updateStatus("🧨 Bulldozed successfully! Spent $50");
+                        } else {
+                            updateStatus("❌ Not enough coins to bulldoze.");
+                        }
+                    } else if (tile instanceof Facility) {
+                        updateStatus("🏢 You cannot bulldoze buildings!");
+                    } else {
+                        updateStatus("🌱 It's already empty land.");
+                    }
+                    break;
+
+                case BUY_VEHICLE:
+                    if (tile instanceof Facility f) {
+                        if (f.getAccessTile() == null) {
+                            updateStatus("❌ " + f.getName() + " needs a Stop next to it first!");
+                            return;
+                        }
+                        if (pendingRoute.contains(f)) {
+                            updateStatus("✨ " + f.getName() + " is already selected!");
+                            return;
+                        }
+                        
+                        pendingRoute.add(f);
+                        if (pendingRoute.size() == 1) {
+                            updateStatus("📍 Step 1: " + f.getName() + " selected. Now click the destination!");
+                        } else if (pendingRoute.size() == 2) {
+                            Alert dialog = new Alert(Alert.AlertType.CONFIRMATION);
+                            dialog.setTitle("Select Vehicle Type");
+                            dialog.setHeaderText("Choose a cute vehicle for this route:");
+                            
+                            ButtonType btnTruck = new ButtonType("🚛 Truck ($500)");
+                            ButtonType btnBus = new ButtonType("🚌 Bus ($400)");
+                            ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                            dialog.getButtonTypes().setAll(btnTruck, btnBus, btnCancel);
+
+                            dialog.showAndWait().ifPresent(type -> {
+                                if (type == btnTruck) {
+                                    if (engine.spendMoney(500)) {
+                                        Vehicle v = new Truck("TRUCK-" + (System.currentTimeMillis()%1000));
+                                        v.setRoute(new Route(new ArrayList<>(pendingRoute)));
+                                        v.setCurrentTile(pendingRoute.get(0).getAccessTile());
+                                        engine.addVehicle(v);
+                                        updateStatus("🎉 Yay! A new Truck joined your fleet!");
+                                    } else updateStatus("❌ Not enough coins for a Truck.");
+                                } else if (type == btnBus) {
+                                    if (engine.spendMoney(400)) {
+                                        Vehicle v = new Bus("BUS-" + (System.currentTimeMillis()%1000));
+                                        v.setRoute(new Route(new ArrayList<>(pendingRoute)));
+                                        v.setCurrentTile(pendingRoute.get(0).getAccessTile());
+                                        engine.addVehicle(v);
+                                        updateStatus("🎉 Yay! A new Bus joined your fleet!");
+                                    } else updateStatus("❌ Not enough coins for a Bus.");
+                                }
+                            });
+                            
+                            pendingRoute.clear(); 
+                        }
+                    } else {
+                        updateStatus("👇 Please click on a City or Industry to set the route.");
+                    }
+                    break;
+            }
+        });
 
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
-
             @Override
             public void handle(long now) {
                 if (lastUpdate > 0) {
                     double dt = (now - lastUpdate) / 1_000_000_000.0;
+                    if(dt > 0.05) dt = 0.05; 
                     engine.tick(dt);
-                    worldMap.updateTrafficLights(dt);
-
-                    // [Fix] Update Time UI
+                    
                     simulatedTime += dt * engine.getSimulationSpeed();
-                    timeLabel.setText(String.format("Time: Day %d", (int) simulatedTime));
+                    timeLabel.setText(String.format("☀️ Day %d", (int)simulatedTime));
+                    capitalLabel.setText("💰 Capital: $" + (int)engine.getBalance());
+
+                    // 【核心修改】：在这里实时刷新面板数据！
+                    if (detailPanel.isVisible() && inspectedFacility != null) {
+                        updateDetailPanel(inspectedFacility);
+                    }
 
                     renderer.render(canvas.getGraphicsContext2D(), worldMap, engine.getVehicles());
                     minimapRenderer.render(minimapCanvas.getGraphicsContext2D(), worldMap);
 
-                    if (engine.getBalance() < 0) {
-                        showGameOver();
-                    }
+                    if (engine.isBankrupt()) showGameOver();
                 }
                 lastUpdate = now;
             }
         };
         gameLoop.start();
+    }
 
-        canvas.setOnMouseClicked(event -> {
-            int x = (int) (event.getX() / TILE_SIZE);
-            int y = (int) (event.getY() / TILE_SIZE);
-            Tile tile = worldMap.getTile(x, y);
-
-            if (isTrafficLightMode) {
-                if (tile instanceof RoadTile road && road.hasJunction()) {
-                    Junction junction = road.getJunction();
-
-                    if (!junction.hasLight()) {
-                        junction.install(new TrafficLight());
-                        System.out.println("Traffic light installed at (" + x + "," + y + ")");
-                    } else {
-                        System.out.println("Traffic light already exists at (" + x + "," + y + ")");
-                    }
-                } else {
-                    System.out.println("Traffic lights can only be installed on valid junctions.");
-                }
-
-                isTrafficLightMode = false;
-                return;
-            }
-
-            if (isBuildMode && tile instanceof EmptyTile) {
-                EmptyTile emptyTile = (EmptyTile) tile;
-                double cost = (emptyTile.getTreeCount() > 0) ? 200.0 : 100.0;
-
-                if (engine.spendMoney(cost)) {
-                    worldMap.placeRoad(x, y, 50.0);
-                    detailPanel.setVisible(false);
-                    capitalLabel.setText("Capital: $" + (int) engine.getBalance());
-                } else {
-                    System.out.println("Not enough money!");
-                }
-            } else {
-                if (tile instanceof Facility) {
-                    updateDetailPanel((Facility) tile);
-                    detailPanel.setLayoutX(event.getSceneX() + 20);
-                    detailPanel.setLayoutY(event.getSceneY() - 50);
-                    detailPanel.setVisible(true);
-                } else {
-                    detailPanel.setVisible(false);
-                }
-            }
-        });
+    private void updateStatus(String text) {
+        statusLabel.setText(text);
     }
 
     private HBox createTopBar() {
         HBox top = new HBox(40);
-        top.setPadding(new Insets(15));
-        top.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #999;");
+        top.setPadding(new Insets(15, 25, 15, 25));
+        top.setStyle("-fx-background-color: #E2F0CB; -fx-border-color: #B5EAD7; -fx-border-width: 0 0 3 0;");
+        top.setAlignment(Pos.CENTER_LEFT);
 
-        Label companyName = new Label("Company: ELTE Tycoon");
-        companyName.setStyle("-fx-font-size: 16px; -fx-border-color: black; -fx-padding: 5;");
+        Label companyName = new Label("🌱 ELTE Tycoon");
+        companyName.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #5D4037;");
 
-        capitalLabel = new Label("Capital: $10000");
-        capitalLabel.setStyle("-fx-font-size: 16px; -fx-border-color: black; -fx-padding: 5;");
+        capitalLabel = new Label("💰 Capital: $10000");
+        capitalLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #E27D60;");
 
-        timeLabel = new Label("Time: Day 0");
-        timeLabel.setStyle("-fx-font-size: 16px; -fx-border-color: black; -fx-padding: 5;");
+        timeLabel = new Label("☀️ Day 0");
+        timeLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #5D4037;");
 
-        HBox speedBox = new HBox(5);
-        Button pause = new Button("||");
-        pause.setOnAction(e -> engine.setSimulationSpeed(0));
-        Button play = new Button(">");
-        play.setOnAction(e -> engine.setSimulationSpeed(1));
-        Button fast = new Button(">>>");
-        fast.setOnAction(e -> engine.setSimulationSpeed(4));
+        HBox speedBox = new HBox(10);
+        Button pause = createSmallBtn("⏸️"); pause.setOnAction(e -> engine.setSimulationSpeed(0));
+        Button play = createSmallBtn("▶️"); play.setOnAction(e -> engine.setSimulationSpeed(1));
+        Button fast = createSmallBtn("⏩"); fast.setOnAction(e -> engine.setSimulationSpeed(4));
+        speedBox.getChildren().addAll(pause, play, fast);
 
-        Button close = new Button("X");
-        close.setOnAction(e -> showMainMenu());
+        Button close = new Button("💾 Save & Quit");
+        close.setStyle("-fx-background-color: #FFB7B2; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15;");
+        close.setOnAction(e -> {
+            SaveManager.saveGame(worldMap, "savegame.dat");
+            showMainMenu();
+        });
 
-        speedBox.getChildren().addAll(pause, play, fast, close);
+        Region s1 = new Region(); HBox.setHgrow(s1, Priority.ALWAYS);
+        Region s2 = new Region(); HBox.setHgrow(s2, Priority.ALWAYS);
+        Region s3 = new Region(); HBox.setHgrow(s3, Priority.ALWAYS);
 
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-        top.getChildren().addAll(companyName, spacer1, capitalLabel, spacer2, timeLabel, speedBox);
+        top.getChildren().addAll(companyName, s1, capitalLabel, s2, timeLabel, s3, speedBox, close);
         return top;
     }
 
+    private Button createSmallBtn(String text) {
+        Button b = new Button(text);
+        b.setStyle("-fx-background-radius: 50; -fx-background-color: #ffffff; -fx-border-color: #B5EAD7; -fx-border-radius: 50;");
+        return b;
+    }
+
     private HBox createBottomBar() {
-        HBox bottom = new HBox(15);
-        bottom.setPadding(new Insets(10));
-        bottom.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #999;");
+        HBox bottom = new HBox(10);
+        bottom.setPadding(new Insets(15));
+        bottom.setStyle("-fx-background-color: #A8D8EA;");
+        bottom.setAlignment(Pos.CENTER);
 
-        Button buildBtn = new Button("Build\nRoad");
-        buildBtn.setStyle("-fx-border-color: black;");
-        buildBtn.setOnAction(e -> isBuildMode = !isBuildMode);
+        ToggleGroup tools = new ToggleGroup();
 
-        Button stopBtn = new Button("Place\nStop");
+        ToggleButton inspectBtn = createToolBtn("🔍 Inspect\n(Info)");
+        ToggleButton roadBtn = createToolBtn("🔨 Build Road\n($100)");
+        ToggleButton stopBtn = createToolBtn("🚏 Place Stop\n($200)");
+        ToggleButton lightBtn = createToolBtn("🚦 Traffic Light\n($50)");
+        ToggleButton routeBtn = createToolBtn("🚛 Buy Vehicle\n($500)");
+        // 【新增】：推土机按钮
+        ToggleButton bulldozeBtn = createToolBtn("🧨 Bulldoze\n($50)");
 
-        Button vehicleBtn = new Button("Buy\nVehicle");
-        vehicleBtn.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Buy Vehicle");
-            alert.setHeaderText("Purchase a new delivery truck?");
-            alert.setContentText("Cost: $500");
+        inspectBtn.setToggleGroup(tools);
+        roadBtn.setToggleGroup(tools);
+        stopBtn.setToggleGroup(tools);
+        lightBtn.setToggleGroup(tools);
+        routeBtn.setToggleGroup(tools);
+        bulldozeBtn.setToggleGroup(tools); // 别忘了加组
 
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    if (engine.spendMoney(500)) {
-                        RoadTile startTile = null;
-                        RoadTile targetTile = null;
+        inspectBtn.setSelected(true);
 
-                        for (int x = 0; x < worldMap.getWidth(); x++) {
-                            for (int y = 0; y < worldMap.getHeight(); y++) {
-                                Tile t = worldMap.getTile(x, y);
-                                if (t instanceof RoadTile) {
-                                    if (startTile == null)
-                                        startTile = (RoadTile) t;
-                                    else
-                                        targetTile = (RoadTile) t;
-                                }
-                            }
-                        }
-
-                        if (startTile != null) {
-                            if (targetTile == null)
-                                targetTile = startTile;
-                            Vehicle newCar = new Vehicle("TRUCK-001", 1.5, 100) {
-                            };
-                            newCar.setCurrentTile(startTile);
-                            newCar.setTargetTile(targetTile);
-                            engine.addVehicle(newCar);
-                        } else {
-                            Alert warn = new Alert(Alert.AlertType.WARNING, "Please build a road first!");
-                            warn.show();
-                            engine.earn(500);
-                        }
-                        capitalLabel.setText("Capital: $" + (int) engine.getBalance());
-                    }
+        tools.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) {
+                inspectBtn.setSelected(true); 
+            } else {
+                if (newVal == inspectBtn) { currentTool = ToolMode.INSPECT; updateStatus("🔍 Mode: Inspecting tiles."); }
+                else if (newVal == roadBtn) { currentTool = ToolMode.BUILD_ROAD; updateStatus("🔨 Mode: Click empty land to build roads."); }
+                else if (newVal == stopBtn) { currentTool = ToolMode.PLACE_STOP; updateStatus("🚏 Mode: Click land adjacent to a facility to place a Stop."); }
+                else if (newVal == lightBtn) { currentTool = ToolMode.TRAFFIC_LIGHT; updateStatus("🚦 Mode: Click a road to install Traffic Lights."); }
+                else if (newVal == routeBtn) { 
+                    currentTool = ToolMode.BUY_VEHICLE; 
+                    pendingRoute.clear();
+                    updateStatus("🚛 Mode: Click Facility A, then Facility B to spawn a vehicle."); 
                 }
-            });
+                // 【新增监听逻辑】
+                else if (newVal == bulldozeBtn) {
+                    currentTool = ToolMode.BULLDOZE;
+                    updateStatus("🧨 Mode: Click a road to destroy it and clear the land.");
+                }
+            }
         });
 
-        Button routeBtn = new Button("Route\nEditor");
-        Button lightBtn = new Button("Traffic\nLights");
-        lightBtn.setOnAction(e -> {
-            isBuildMode = false;
-            isTrafficLightMode = true;
-        });
-
-        bottom.getChildren().addAll(buildBtn, stopBtn, vehicleBtn, routeBtn, lightBtn);
+        // 加上 bulldozeBtn 显示
+        bottom.getChildren().addAll(inspectBtn, roadBtn, stopBtn, lightBtn, routeBtn, bulldozeBtn);
         return bottom;
+    }
+
+    private ToggleButton createToolBtn(String text) {
+        ToggleButton btn = new ToggleButton(text);
+        btn.setPrefSize(130, 65);
+        btn.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-background-color: #ffffff; -fx-text-fill: #5D4037; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 3);");
+        return btn;
     }
 
     private void updateDetailPanel(Facility f) {
         detailPanel.getChildren().clear();
-        Label title = new Label("detail");
-        title.setStyle("-fx-alignment: center; -fx-border-bottom-color: black; -fx-border-bottom-width: 1px;");
+        Label title = new Label("📋 Facility Info");
+        title.setStyle("-fx-alignment: center; -fx-font-weight: bold; -fx-border-bottom-color: #FFB7B2; -fx-border-bottom-width: 2px; -fx-padding: 0 0 5 0; -fx-text-fill: #5D4037;");
         title.setMaxWidth(Double.MAX_VALUE);
         detailPanel.getChildren().add(title);
 
-        if (f instanceof City) {
-            City c = (City) f;
-            detailPanel.getChildren().addAll(new Label("Demand : Passengers"),
-                    new Label("City Growth : " + c.getDisplayPopulation()));
-        } else if (f instanceof Industry) {
-            detailPanel.getChildren().addAll(new Label("Facility : " + f.getName()), new Label("Stockpile : "),
-                    new Label("    Goods_A : " + f.getStockpile(CargoType.GOODS_A)));
+        if (f instanceof City c) {
+            detailPanel.getChildren().addAll(
+                new Label("🏠 Name: " + c.getName()),
+                new Label("🧑‍🤝‍🧑 Pop: " + c.getDisplayPopulation()),
+                new Label("📥 Demand: Pax")
+            );
+        } else if (f instanceof Industry i) {
+            detailPanel.getChildren().addAll(
+                new Label("🏭 Name: " + i.getName()),
+                new Label("📦 Produces: Goods"),
+                new Label("🪵 Stockpile: " + i.getStockpile(CargoType.GOODS_A))
+            );
+        }
+        
+        for(var node : detailPanel.getChildren()) {
+            if(node instanceof Label) {
+                node.setStyle(node.getStyle() + "-fx-text-fill: #5D4037; -fx-font-weight: bold;");
+            }
         }
     }
 }

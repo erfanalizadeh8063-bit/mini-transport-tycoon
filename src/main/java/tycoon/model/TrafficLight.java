@@ -1,6 +1,8 @@
 package tycoon.model;
 
-public class TrafficLight {
+import java.io.Serializable;
+
+public class TrafficLight implements Serializable {
     private SignalPhase phase;
     private double greenNS;
     private double greenEW;

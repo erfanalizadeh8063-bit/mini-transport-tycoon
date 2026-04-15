@@ -1,79 +1,147 @@
 package tycoon.model;
 
-/**
- * Abstract class for all road vehicles (Buses and Trucks).
- */
-public abstract class Vehicle {
+import tycoon.service.PathFinder;
+import tycoon.service.GameEngine; 
+import java.util.ArrayList;
+import java.util.List;
+import java.io.Serializable;
+
+public abstract class Vehicle implements Serializable {
     protected String id;
-    protected double speed;      // Units per second
-    protected int capacity;      // Maximum cargo/passengers
+    protected double speed;      
+    protected int capacity;      
     
-    // Smooth movement logic (UML: progress: double 0..1)
     protected double progress;   
     protected RoadTile currentTile;
     protected RoadTile targetTile;
     
-    protected Route route;       // The assigned circular route
-    protected Direction currentDirection;
+    protected CargoType currentCargoType = null;
+    protected int currentLoad = 0;
+    protected CargoType allowedCargoType;
+    
+    protected List<RoadTile> currentSegmentPath = new ArrayList<>();
+    protected Route route;       
+    protected Direction currentDirection; 
 
-    public Vehicle(String id, double speed, int capacity) {
+    public Vehicle(String id, double speed, int capacity, CargoType allowedCargoType) {
         this.id = id;
         this.speed = speed;
         this.capacity = capacity;
+        this.allowedCargoType = allowedCargoType;
         this.progress = 0.0;
     }
 
-    /**
-     * Core update loop for the vehicle.
-     * Handles movement and tile transition.
-     */
-    public void update(double dt) {
-        if (targetTile == null) return;
+    public void setRoute(Route route) {
+        this.route = route;
+    }
 
-        // Check if the way is clear (integrates with colleague's Junction/TrafficLight)
-        if (progress == 0 && !targetTile.canEnter(currentDirection)) {
-            return; // Wait until the next tile is free or light is green
+    public void update(double dt, PathFinder pathFinder, GameEngine engine) {
+        // 如果当前没有目标格子，去寻找下一段路
+        if (targetTile == null && route != null) {
+            startNewSegment(pathFinder, engine);
         }
 
-        // Advance progress based on speed and delta time
+        if (targetTile == null) return;
+
         progress += (speed * dt);
 
-        // If progress >= 1.0, the vehicle has reached the center of the targetTile
-        if (progress >= 1.0) {
-            moveToNextTile();
+        while (progress >= 1.0) {
+            moveToNextTile(pathFinder, engine);
         }
     }
 
-    private void moveToNextTile() {
-        // Release the old tile occupancy
-        if (currentTile != null) {
+    private void startNewSegment(PathFinder pathFinder, GameEngine engine) {
+        ITransportPoint nextStopPoint = route.getCurrentTarget();
+        if (nextStopPoint == null) return;
+
+        RoadTile destination = nextStopPoint.getAccessTile(); 
+        
+        if (destination == null) {
+            return;
+        }
+
+        List<RoadTile> path = pathFinder.findPath(this.currentTile, destination);
+        
+        if (path != null) {
+            if (path.isEmpty()) {
+                performStopActions(engine);
+            } else {
+                this.currentSegmentPath = path;
+                this.targetTile = currentSegmentPath.remove(0);
+                this.progress = 0.0;
+                updateDirection();
+            }
+        } else {
+            System.out.println("Warning: " + id + " waiting for road connection.");
+        }
+    }
+
+    private void performStopActions(GameEngine engine) {
+        targetTile = null; 
+        ITransportPoint currentStop = route.getCurrentTarget();
+        
+        if (currentStop != null) {
+            if (currentLoad > 0) {
+                int unloaded = currentStop.unload(currentCargoType, currentLoad);
+                if (unloaded > 0) {
+                    currentLoad -= unloaded;
+                    double earned = unloaded * 10.0; 
+                    engine.earn(earned);
+                    System.out.println("💰 " + id + " unloaded " + unloaded + " " + currentCargoType + ", earned $" + earned);
+                }
+                if (currentLoad == 0) currentCargoType = null;
+            }
+
+
+            if (currentLoad < capacity) {
+                int amountToLoad = capacity - currentLoad;
+                int loaded = currentStop.load(allowedCargoType, amountToLoad);
+                if (loaded > 0) {
+                    currentLoad += loaded;
+                    currentCargoType = allowedCargoType;
+                    System.out.println("📦 " + id + " loaded " + loaded + " " + currentCargoType);
+                }
+            }
+        }
+        
+        if (route != null) {
+            route.advance(); 
+        }
+    }
+
+    private void moveToNextTile(PathFinder pathFinder, GameEngine engine) {
+        if (currentTile != null && currentDirection != null) {
             currentTile.release(currentDirection);
         }
 
-        // Move into the target
         currentTile = targetTile;
-        progress = 0.0;
+        progress -= 1.0; 
 
-        // Reserve the new position in the current tile
-        currentTile.reserve(currentDirection, this);
+        if (!currentSegmentPath.isEmpty()) {
+            targetTile = currentSegmentPath.remove(0);
+            updateDirection();
+        } else {
+            performStopActions(engine);
+        }
 
-        // Logic to determine the NEXT targetTile based on Route would go here
-        // targetTile = pathFinder.nextStep(currentTile, route.getCurrentTarget());
+        if (currentTile != null && targetTile != null && currentDirection != null) {
+            currentTile.reserve(currentDirection, this);
+        }
     }
 
-    public void assignRoute(Route r) {
-        this.route = r;
+    private void updateDirection() {
+        if (currentTile == null || targetTile == null) return;
+        int dx = targetTile.getPos().x() - currentTile.getPos().x();
+        int dy = targetTile.getPos().y() - currentTile.getPos().y();
+
+        if (dx > 0) currentDirection = Direction.E;
+        else if (dx < 0) currentDirection = Direction.W;
+        else if (dy > 0) currentDirection = Direction.S;
+        else if (dy < 0) currentDirection = Direction.N;
     }
+
     public RoadTile getCurrentTile() { return currentTile; }
     public RoadTile getTargetTile() { return targetTile; }
     public double getProgress() { return progress; }
-
-    public void setCurrentTile(RoadTile tile) {
-        this.currentTile = tile;
-    }
-
-    public void setTargetTile(RoadTile tile) {
-        this.targetTile = tile;
-    }
-
+    public void setCurrentTile(RoadTile tile) { this.currentTile = tile; }
 }
