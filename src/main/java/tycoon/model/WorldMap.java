@@ -2,11 +2,11 @@ package tycoon.model;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.io.Serializable;
 /**
  * Manages the 2D grid of tiles and provides spatial queries.
  */
-public class WorldMap {
+public class WorldMap implements Serializable {
     private int width;  // UML: width: int
     private int height; // UML: height: int
     private Tile[][] grid; // UML: WorldMap contains Tiles
@@ -72,6 +72,30 @@ public class WorldMap {
         for (int x = startX; x < startX + width; x++) {
             for (int y = startY; y < startY + height; y++) {
                setTile(x, y, facility);
+            }
+        }
+    }
+
+    public RoadTile placeStop(int x, int y, double speedLimit) {
+        RoadTile stopTile = new RoadTile(new Vector2(x, y), 0.0, this, speedLimit);
+        
+
+        setTile(x, y, stopTile);
+        
+        bindStopToAdjacentFacilities(stopTile);
+        
+        return stopTile;
+    }
+
+    private void bindStopToAdjacentFacilities(RoadTile stopTile) {
+        List<Tile> adjacentTiles = neighbors(stopTile);
+        
+        for (Tile neighbor : adjacentTiles) {
+            if (neighbor instanceof Facility facility) {
+                facility.setAccessTile(stopTile);
+                System.out.println("Success: Linked stop at (" + stopTile.getPos().x() + "," + stopTile.getPos().y() + ") to " + facility.getName());
+                
+
             }
         }
     }

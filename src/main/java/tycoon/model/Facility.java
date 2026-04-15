@@ -3,16 +3,14 @@ package tycoon.model;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Represents a fixed facility (City, Industry) on the map.
- * Facilities take up space and manage an inventory of cargo.
- */
-public abstract class Facility extends Tile {
+
+public abstract class Facility extends Tile implements ITransportPoint {
     private String name;
     protected Map<CargoType, Integer> inventory;
     
-    // Maximum capacity to prevent infinite cargo accumulation
     protected int maxCapacity = 500; 
+
+    protected RoadTile accessTile;
 
     public Facility(Vector2 pos, double height, WorldMap map, String name) {
         super(pos, height, map); 
@@ -20,6 +18,17 @@ public abstract class Facility extends Tile {
         this.inventory = new HashMap<>();
     }
 
+  
+    public void setAccessTile(RoadTile tile) {
+        this.accessTile = tile;
+    }
+
+    @Override
+    public RoadTile getAccessTile() {
+        return accessTile;
+    }
+
+    @Override
     public int load(CargoType type, int requestedAmount) {
         int available = inventory.getOrDefault(type, 0);
         int amountToLoad = Math.min(available, requestedAmount);
@@ -27,9 +36,15 @@ public abstract class Facility extends Tile {
         return amountToLoad;
     }
 
-    public void unload(CargoType type, int amount) {
+
+    @Override
+    public int unload(CargoType type, int amount) {
         int current = inventory.getOrDefault(type, 0);
-        inventory.put(type, Math.min(current + amount, maxCapacity));
+        int spaceLeft = maxCapacity - current; 
+        int actualUnloaded = Math.min(amount, spaceLeft); 
+        
+        inventory.put(type, current + actualUnloaded);
+        return actualUnloaded;
     }
 
     protected void produce(CargoType type, int amount) {
@@ -39,7 +54,7 @@ public abstract class Facility extends Tile {
         }
     }
 
-    // --- Inherited from Tile ---
+   
     @Override
     public boolean isBuildable() {
         return false; 
@@ -51,7 +66,9 @@ public abstract class Facility extends Tile {
     }
 
     // --- Getters ---
+    @Override
     public String getName() { return name; }
+    
     public Map<CargoType, Integer> getInventory() { return inventory; }
     public int getStockpile(CargoType type) { return inventory.getOrDefault(type, 0); }
 }

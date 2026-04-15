@@ -14,7 +14,9 @@ public class GameRenderer {
     private Image cityImg;
     private Image factoryImg;
     private Image treeImg; 
-    private Image carImg; 
+    
+    private Image busImg; 
+    private Image truckImg; 
 
     public GameRenderer() {
         try {
@@ -23,7 +25,8 @@ public class GameRenderer {
             cityImg = new Image(getClass().getResourceAsStream("/city.jpg"));
             factoryImg = new Image(getClass().getResourceAsStream("/factory.png"));
             treeImg = new Image(getClass().getResourceAsStream("/tree.png")); 
-            carImg = new Image(getClass().getResourceAsStream("/car.png")); 
+            busImg = new Image(getClass().getResourceAsStream("/bus.png")); 
+            truckImg = new Image(getClass().getResourceAsStream("/truck.png")); 
         } catch (Exception e) {
             System.err.println("Error loading sprites: " + e.getMessage());
         }
@@ -56,7 +59,6 @@ public class GameRenderer {
         int px = x * TILE_SIZE;
         int py = y * TILE_SIZE;
 
-
         if (grassImg != null && !grassImg.isError()) {
             gc.drawImage(grassImg, px, py, TILE_SIZE, TILE_SIZE);
         } else {
@@ -64,11 +66,9 @@ public class GameRenderer {
             gc.fillRect(px, py, TILE_SIZE, TILE_SIZE);
         }
 
-
         if (tile instanceof City || tile instanceof Industry) {
             return; 
         }
-
 
         if (tile instanceof EmptyTile) {
             int trees = ((EmptyTile) tile).getTreeCount();
@@ -82,7 +82,6 @@ public class GameRenderer {
                 gc.drawImage(roadImg, px, py, TILE_SIZE, TILE_SIZE);
             }
         }
-        
 
         gc.setStroke(Color.web("#000000", 0.05));
         gc.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
@@ -132,9 +131,22 @@ public class GameRenderer {
             drawY += (endY - drawY) * p;
         }
 
-        if (carImg != null && !carImg.isError()) {
-            gc.drawImage(carImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+        if (v instanceof Bus) {
+            if (busImg != null && !busImg.isError()) {
+                gc.drawImage(busImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+            } else {
+                gc.setFill(Color.BLUE); 
+                gc.fillOval(drawX + TILE_SIZE*0.2, drawY + TILE_SIZE*0.2, TILE_SIZE*0.6, TILE_SIZE*0.6);
+            }
+        } else if (v instanceof Truck) {
+            if (truckImg != null && !truckImg.isError()) {
+                gc.drawImage(truckImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+            } else {
+                gc.setFill(Color.ORANGE); 
+                gc.fillOval(drawX + TILE_SIZE*0.2, drawY + TILE_SIZE*0.2, TILE_SIZE*0.6, TILE_SIZE*0.6);
+            }
         } else {
+            // 兜底方案
             gc.setFill(Color.YELLOW);
             gc.fillOval(drawX + TILE_SIZE*0.2, drawY + TILE_SIZE*0.2, TILE_SIZE*0.6, TILE_SIZE*0.6);
         }

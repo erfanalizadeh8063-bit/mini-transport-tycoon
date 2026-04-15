@@ -1,10 +1,10 @@
 package tycoon.model;
-
+import java.io.Serializable;
 /**
  * Represents a 2D coordinate on the map grid.
  * Using Java record for automatic boilerplate (getters, equals, hashCode).
  */
-public record Vector2(int x, int y) {
+public record Vector2(int x, int y) implements Serializable {
     /**
      * Adds another vector to this one.
      * @param other The vector to add.
