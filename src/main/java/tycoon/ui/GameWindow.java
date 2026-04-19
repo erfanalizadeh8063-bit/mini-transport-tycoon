@@ -387,12 +387,12 @@ public class GameWindow extends Application {
         vehicleBtn.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Buy Vehicle");
-            alert.setHeaderText("Purchase a new delivery truck?");
-            alert.setContentText("Cost: $500");
+            alert.setHeaderText("Purchase a new vehicle?");
+            alert.setContentText("Cost: $200");
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    if (engine.spendMoney(500)) {
+                    if (engine.spendMoney(200)) {
                         Facility startFacility = findFirstFacilityWithStop();
                         Facility targetFacility = findSecondFacilityWithStop(startFacility);
 
@@ -401,10 +401,21 @@ public class GameWindow extends Application {
                             RoadTile targetTile = targetFacility.getAccessTile();
 
                             if (startTile != null && targetTile != null) {
-                                Vehicle newCar = new Vehicle("TRUCK-001", 0.25, 100) {
+                                var path = engine.getPathFinder().findPath(startTile, targetTile);
+
+                                if (path == null || path.size() < 2) {
+                                    Alert warn = new Alert(Alert.AlertType.WARNING,
+                                            "No valid road path exists between the two stops.");
+                                    warn.show();
+                                    engine.earn(200);
+                                    capitalLabel.setText("Capital: $" + (int) engine.getBalance());
+                                    return;
+                                }
+
+                                Vehicle newCar = new Vehicle("VEHICLE-001", 1.5, 100) {
                                 };
-                                newCar.setCurrentTile(startTile);
-                                newCar.setTargetTile(targetTile);
+                                newCar.setShuttleStops(startTile, targetTile);
+                                newCar.setPath(path);
                                 engine.addVehicle(newCar);
                             } else {
                                 Alert warn = new Alert(Alert.AlertType.WARNING,
