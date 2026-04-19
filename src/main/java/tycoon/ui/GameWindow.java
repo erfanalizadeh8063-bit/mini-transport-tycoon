@@ -393,31 +393,28 @@ public class GameWindow extends Application {
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
                     if (engine.spendMoney(500)) {
-                        RoadTile startTile = null;
-                        RoadTile targetTile = null;
+                        Facility startFacility = findFirstFacilityWithStop();
+                        Facility targetFacility = findSecondFacilityWithStop(startFacility);
 
-                        for (int x = 0; x < worldMap.getWidth(); x++) {
-                            for (int y = 0; y < worldMap.getHeight(); y++) {
-                                Tile t = worldMap.getTile(x, y);
-                                if (t instanceof RoadTile) {
-                                    if (startTile == null)
-                                        startTile = (RoadTile) t;
-                                    else
-                                        targetTile = (RoadTile) t;
-                                }
+                        if (startFacility != null && targetFacility != null) {
+                            RoadTile startTile = startFacility.getAccessTile();
+                            RoadTile targetTile = targetFacility.getAccessTile();
+
+                            if (startTile != null && targetTile != null) {
+                                Vehicle newCar = new Vehicle("TRUCK-001", 0.25, 100) {
+                                };
+                                newCar.setCurrentTile(startTile);
+                                newCar.setTargetTile(targetTile);
+                                engine.addVehicle(newCar);
+                            } else {
+                                Alert warn = new Alert(Alert.AlertType.WARNING,
+                                        "Selected facilities do not have valid stops.");
+                                warn.show();
+                                engine.earn(500);
                             }
-                        }
-
-                        if (startTile != null) {
-                            if (targetTile == null)
-                                targetTile = startTile;
-                            Vehicle newCar = new Vehicle("TRUCK-001", 0.25, 100) {
-                            };
-                            newCar.setCurrentTile(startTile);
-                            newCar.setTargetTile(targetTile);
-                            engine.addVehicle(newCar);
                         } else {
-                            Alert warn = new Alert(Alert.AlertType.WARNING, "Please build a road first!");
+                            Alert warn = new Alert(Alert.AlertType.WARNING,
+                                    "Please place stops near two facilities first!");
                             warn.show();
                             engine.earn(500);
                         }
@@ -436,6 +433,61 @@ public class GameWindow extends Application {
 
         bottom.getChildren().addAll(buildBtn, stopBtn, vehicleBtn, routeBtn, lightBtn);
         return bottom;
+    }
+
+    private RoadTile findFirstRoadTile() {
+        for (int x = 0; x < worldMap.getWidth(); x++) {
+            for (int y = 0; y < worldMap.getHeight(); y++) {
+                Tile t = worldMap.getTile(x, y);
+                if (t instanceof RoadTile road) {
+                    return road;
+                }
+            }
+        }
+        return null;
+    }
+
+    private RoadTile findFirstConnectedNeighbor(RoadTile road) {
+        if (road == null) {
+            return null;
+        }
+
+        for (Direction dir : road.getConnections()) {
+            int nx = road.getPos().x() + dir.dx();
+            int ny = road.getPos().y() + dir.dy();
+
+            Tile neighbor = worldMap.getTile(nx, ny);
+            if (neighbor instanceof RoadTile nextRoad) {
+                return nextRoad;
+            }
+        }
+
+        return null;
+    }
+
+    private Facility findFirstFacilityWithStop() {
+        for (int x = 0; x < worldMap.getWidth(); x++) {
+            for (int y = 0; y < worldMap.getHeight(); y++) {
+                Tile tile = worldMap.getTile(x, y);
+                if (tile instanceof Facility facility && facility.getAccessTile() != null) {
+                    return facility;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Facility findSecondFacilityWithStop(Facility firstFacility) {
+        for (int x = 0; x < worldMap.getWidth(); x++) {
+            for (int y = 0; y < worldMap.getHeight(); y++) {
+                Tile tile = worldMap.getTile(x, y);
+                if (tile instanceof Facility facility && facility != firstFacility
+                        && facility.getAccessTile() != null) {
+                    return facility;
+                }
+            }
+        }
+        return null;
     }
 
     private void updateDetailPanel(Facility f) {
