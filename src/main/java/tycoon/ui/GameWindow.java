@@ -275,6 +275,29 @@ public class GameWindow extends Application {
             if (isStopMode) {
                 if (tile instanceof RoadTile road) {
                     road.setHasStop(true);
+
+                    int[][] directions = {
+                            { 0, -1 }, // N
+                            { 0, 1 }, // S
+                            { -1, 0 }, // W
+                            { 1, 0 } // E
+                    };
+
+                    for (int[] dir : directions) {
+                        int nx = x + dir[0];
+                        int ny = y + dir[1];
+
+                        if (nx < 0 || ny < 0 || nx >= worldMap.getWidth() || ny >= worldMap.getHeight()) {
+                            continue;
+                        }
+
+                        Tile neighbor = worldMap.getTile(nx, ny);
+                        if (neighbor instanceof Facility facility) {
+                            facility.setAccessTile(road);
+                            System.out.println("Stop connected to facility: " + facility.getName());
+                        }
+                    }
+
                     System.out.println("Stop placed at (" + x + "," + y + ")");
                 } else {
                     System.out.println("Stops can only be placed on road tiles.");

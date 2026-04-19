@@ -10,14 +10,17 @@ import java.util.Map;
 public abstract class Facility extends Tile {
     private String name;
     protected Map<CargoType, Integer> inventory;
-    
+    protected RoadTile accessTile;
+
     // Maximum capacity to prevent infinite cargo accumulation
-    protected int maxCapacity = 500; 
+    protected int maxCapacity = 500;
 
     public Facility(Vector2 pos, double height, WorldMap map, String name) {
-        super(pos, height, map); 
+        super(pos, height, map);
         this.name = name;
         this.inventory = new HashMap<>();
+        this.accessTile = null;
+
     }
 
     public int load(CargoType type, int requestedAmount) {
@@ -42,7 +45,7 @@ public abstract class Facility extends Tile {
     // --- Inherited from Tile ---
     @Override
     public boolean isBuildable() {
-        return false; 
+        return false;
     }
 
     @Override
@@ -51,7 +54,23 @@ public abstract class Facility extends Tile {
     }
 
     // --- Getters ---
-    public String getName() { return name; }
-    public Map<CargoType, Integer> getInventory() { return inventory; }
-    public int getStockpile(CargoType type) { return inventory.getOrDefault(type, 0); }
+    public String getName() {
+        return name;
+    }
+
+    public Map<CargoType, Integer> getInventory() {
+        return inventory;
+    }
+
+    public int getStockpile(CargoType type) {
+        return inventory.getOrDefault(type, 0);
+    }
+
+    public RoadTile getAccessTile() {
+        return accessTile;
+    }
+
+    public void setAccessTile(RoadTile accessTile) {
+        this.accessTile = accessTile;
+    }
 }
