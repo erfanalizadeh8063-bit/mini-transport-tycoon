@@ -154,6 +154,14 @@ public class GameRenderer {
                 gc.fillOval(px + center + 3, py + center, 6, 6);
             }
         }
+        if (road.hasStop()) {
+            gc.setFill(Color.DODGERBLUE);
+            gc.fillOval(px + TILE_SIZE * 0.35, py + TILE_SIZE * 0.35, TILE_SIZE * 0.3, TILE_SIZE * 0.3);
+
+            gc.setStroke(Color.WHITE);
+            gc.setLineWidth(2);
+            gc.strokeOval(px + TILE_SIZE * 0.35, py + TILE_SIZE * 0.35, TILE_SIZE * 0.3, TILE_SIZE * 0.3);
+        }
     }
 
     private void drawBuildingTile(GraphicsContext gc, Tile tile, int x, int y) {

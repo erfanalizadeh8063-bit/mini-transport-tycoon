@@ -10,6 +10,7 @@ public class RoadTile extends Tile {
     private Map<Direction, Vehicle> occupancy;
     private Junction junction;
     private EnumSet<Direction> connections;
+    private boolean hasStop;
 
     public RoadTile(Vector2 pos, double height, WorldMap map, double speedLimit) {
         super(pos, height, map);
@@ -17,6 +18,16 @@ public class RoadTile extends Tile {
         this.occupancy = new HashMap<>();
         this.junction = null;
         this.connections = EnumSet.noneOf(Direction.class);
+        this.hasStop = false;
+        this.hasStop = false;
+    }
+
+    public boolean hasStop() {
+        return hasStop;
+    }
+
+    public void setHasStop(boolean hasStop) {
+        this.hasStop = hasStop;
     }
 
     public boolean hasJunction() {

@@ -273,6 +273,12 @@ public class GameWindow extends Application {
                 return;
             }
             if (isStopMode) {
+                if (tile instanceof RoadTile road) {
+                    road.setHasStop(true);
+                    System.out.println("Stop placed at (" + x + "," + y + ")");
+                } else {
+                    System.out.println("Stops can only be placed on road tiles.");
+                }
 
                 isStopMode = false;
                 return;
