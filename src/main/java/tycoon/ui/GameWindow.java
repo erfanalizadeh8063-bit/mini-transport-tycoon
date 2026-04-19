@@ -38,6 +38,7 @@ public class GameWindow extends Application {
     private MinimapRenderer minimapRenderer;
     private ScrollPane scrollPane;
     private boolean isTrafficLightMode = false;
+    private boolean isStopMode = false;
 
     // Test version
     @Override
@@ -271,6 +272,11 @@ public class GameWindow extends Application {
                 isTrafficLightMode = false;
                 return;
             }
+            if (isStopMode) {
+
+                isStopMode = false;
+                return;
+            }
 
             if (isBuildMode && tile instanceof EmptyTile) {
                 EmptyTile emptyTile = (EmptyTile) tile;
@@ -342,7 +348,12 @@ public class GameWindow extends Application {
         buildBtn.setOnAction(e -> isBuildMode = !isBuildMode);
 
         Button stopBtn = new Button("Place\nStop");
+        stopBtn.setOnAction(e -> {
+            isBuildMode = false;
+            isTrafficLightMode = false;
+            isStopMode = true;
 
+        });
         Button vehicleBtn = new Button("Buy\nVehicle");
         vehicleBtn.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -371,7 +382,7 @@ public class GameWindow extends Application {
                         if (startTile != null) {
                             if (targetTile == null)
                                 targetTile = startTile;
-                            Vehicle newCar = new Vehicle("TRUCK-001", 1.5, 100) {
+                            Vehicle newCar = new Vehicle("TRUCK-001", 0.25, 100) {
                             };
                             newCar.setCurrentTile(startTile);
                             newCar.setTargetTile(targetTile);

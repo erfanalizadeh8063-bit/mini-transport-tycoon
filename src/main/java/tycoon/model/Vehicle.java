@@ -1,19 +1,21 @@
 package tycoon.model;
 
+import java.util.Set;
+
 /**
  * Abstract class for all road vehicles (Buses and Trucks).
  */
 public abstract class Vehicle {
     protected String id;
-    protected double speed;      // Units per second
-    protected int capacity;      // Maximum cargo/passengers
-    
+    protected double speed; // Units per second
+    protected int capacity; // Maximum cargo/passengers
+
     // Smooth movement logic (UML: progress: double 0..1)
-    protected double progress;   
+    protected double progress;
     protected RoadTile currentTile;
     protected RoadTile targetTile;
-    
-    protected Route route;       // The assigned circular route
+
+    protected Route route; // The assigned circular route
     protected Direction currentDirection;
 
     public Vehicle(String id, double speed, int capacity) {
@@ -28,45 +30,85 @@ public abstract class Vehicle {
      * Handles movement and tile transition.
      */
     public void update(double dt) {
-        if (targetTile == null) return;
-
-        // Check if the way is clear (integrates with colleague's Junction/TrafficLight)
-        if (progress == 0 && !targetTile.canEnter(currentDirection)) {
-            return; // Wait until the next tile is free or light is green
+        if (targetTile == null) {
+            return;
         }
 
         // Advance progress based on speed and delta time
         progress += (speed * dt);
 
-        // If progress >= 1.0, the vehicle has reached the center of the targetTile
+        // If progress >= 1.0, the vehicle has reached the target tile
         if (progress >= 1.0) {
             moveToNextTile();
         }
     }
 
     private void moveToNextTile() {
-        // Release the old tile occupancy
-        if (currentTile != null) {
+        if (currentTile != null && currentDirection != null) {
             currentTile.release(currentDirection);
         }
 
-        // Move into the target
+        RoadTile previousTile = currentTile;
         currentTile = targetTile;
         progress = 0.0;
 
-        // Reserve the new position in the current tile
-        currentTile.reserve(currentDirection, this);
+        if (currentTile == null) {
+            return;
+        }
 
-        // Logic to determine the NEXT targetTile based on Route would go here
-        // targetTile = pathFinder.nextStep(currentTile, route.getCurrentTarget());
+        if (currentDirection != null) {
+            currentTile.reserve(currentDirection, this);
+        }
+
+        targetTile = findNextConnectedRoad(previousTile, currentTile);
+    }
+
+    private RoadTile findNextConnectedRoad(RoadTile previousTile, RoadTile current) {
+        if (current == null) {
+            return null;
+        }
+
+        Set<Direction> connections = current.getConnections();
+
+        for (Direction dir : connections) {
+            int nx = current.getPos().x() + dir.dx();
+            int ny = current.getPos().y() + dir.dy();
+
+            if (nx < 0 || ny < 0 || nx >= current.map.getWidth() || ny >= current.map.getHeight()) {
+                continue;
+            }
+
+            Tile neighbor = current.map.getTile(nx, ny);
+            if (!(neighbor instanceof RoadTile nextRoad)) {
+                continue;
+            }
+
+            if (previousTile != null && nextRoad == previousTile) {
+                continue;
+            }
+
+            currentDirection = dir;
+            return nextRoad;
+        }
+
+        return null;
     }
 
     public void assignRoute(Route r) {
         this.route = r;
     }
-    public RoadTile getCurrentTile() { return currentTile; }
-    public RoadTile getTargetTile() { return targetTile; }
-    public double getProgress() { return progress; }
+
+    public RoadTile getCurrentTile() {
+        return currentTile;
+    }
+
+    public RoadTile getTargetTile() {
+        return targetTile;
+    }
+
+    public double getProgress() {
+        return progress;
+    }
 
     public void setCurrentTile(RoadTile tile) {
         this.currentTile = tile;
@@ -75,5 +117,4 @@ public abstract class Vehicle {
     public void setTargetTile(RoadTile tile) {
         this.targetTile = tile;
     }
-
 }
