@@ -1,21 +1,32 @@
 package tycoon.model;
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Abstract class for all road vehicles (Buses and Trucks).
+ * Abstract class for all road vehicles.
+ * Path-based movement + traffic light check before entering next tile.
  */
 public abstract class Vehicle {
     protected String id;
-    protected double speed; // Units per second
-    protected int capacity; // Maximum cargo/passengers
+    protected double speed;
+    protected int capacity;
 
-    // Smooth movement logic (UML: progress: double 0..1)
+    // movement on current segment
     protected double progress;
     protected RoadTile currentTile;
-    protected RoadTile targetTile;
+    protected RoadTile nextTile;
 
-    protected Route route; // The assigned circular route
+    // full path
+    protected List<RoadTile> currentPath;
+    protected int pathIndex;
+
+    // simple shuttle between 2 stops
+    protected RoadTile stopA;
+    protected RoadTile stopB;
+    protected boolean goingForward;
+
+    // remember how we entered the current tile
     protected Direction currentDirection;
 
     public Vehicle(String id, double speed, int capacity) {
@@ -23,79 +34,119 @@ public abstract class Vehicle {
         this.speed = speed;
         this.capacity = capacity;
         this.progress = 0.0;
+        this.currentPath = new ArrayList<>();
+        this.pathIndex = 0;
+        this.goingForward = true;
+        this.currentDirection = null;
     }
 
-    /**
-     * Core update loop for the vehicle.
-     * Handles movement and tile transition.
-     */
+    public void setShuttleStops(RoadTile stopA, RoadTile stopB) {
+        this.stopA = stopA;
+        this.stopB = stopB;
+    }
+
+    public void setPath(List<RoadTile> path) {
+        this.currentPath = (path != null) ? new ArrayList<>(path) : new ArrayList<>();
+        this.pathIndex = 0;
+        this.progress = 0.0;
+        this.currentDirection = null;
+
+        if (currentPath.isEmpty()) {
+            currentTile = null;
+            nextTile = null;
+            return;
+        }
+
+        currentTile = currentPath.get(0);
+
+        if (currentPath.size() > 1) {
+            nextTile = currentPath.get(1);
+            pathIndex = 1;
+        } else {
+            nextTile = null;
+        }
+    }
+
     public void update(double dt) {
-        if (targetTile == null) {
+        if (currentTile == null || nextTile == null) {
             return;
         }
 
-        // Advance progress based on speed and delta time
-        progress += (speed * dt);
+        Direction moveDir = getDirection(currentTile, nextTile);
+        if (moveDir == null) {
+            nextTile = null;
+            return;
+        }
 
-        // If progress >= 1.0, the vehicle has reached the target tile
-        if (progress >= 1.0) {
-            moveToNextTile();
+        // If the next tile is blocked by a red light, wait steadily before it.
+        if (!nextTile.canEnter(moveDir)) {
+            if (progress > 0.90) {
+                progress = 0.90;
+            }
+            return;
+        }
+
+        progress += speed * dt;
+
+        while (progress >= 1.0 && nextTile != null) {
+            moveDir = getDirection(currentTile, nextTile);
+            if (moveDir == null) {
+                nextTile = null;
+                return;
+            }
+
+            if (!nextTile.canEnter(moveDir)) {
+                progress = 0.90;
+                return;
+            }
+
+            progress -= 1.0;
+            advanceToNextTile(moveDir);
         }
     }
 
-    private void moveToNextTile() {
-        if (currentTile != null && currentDirection != null) {
-            currentTile.release(currentDirection);
+    private void advanceToNextTile(Direction moveDir) {
+        currentTile = nextTile;
+        currentDirection = moveDir;
+
+        if (pathIndex >= currentPath.size() - 1) {
+            handleReachedDestination();
+            return;
         }
 
-        RoadTile previousTile = currentTile;
-        currentTile = targetTile;
+        pathIndex++;
+        nextTile = currentPath.get(pathIndex);
+    }
+
+    private void handleReachedDestination() {
         progress = 0.0;
-
-        if (currentTile == null) {
-            return;
-        }
-
-        if (currentDirection != null) {
-            currentTile.reserve(currentDirection, this);
-        }
-
-        targetTile = findNextConnectedRoad(previousTile, currentTile);
+        nextTile = null;
     }
 
-    private RoadTile findNextConnectedRoad(RoadTile previousTile, RoadTile current) {
-        if (current == null) {
+    private Direction getDirection(RoadTile from, RoadTile to) {
+        if (from == null || to == null) {
             return null;
         }
 
-        Set<Direction> connections = current.getConnections();
+        int dx = to.getPos().x() - from.getPos().x();
+        int dy = to.getPos().y() - from.getPos().y();
 
-        for (Direction dir : connections) {
-            int nx = current.getPos().x() + dir.dx();
-            int ny = current.getPos().y() + dir.dy();
-
-            if (nx < 0 || ny < 0 || nx >= current.map.getWidth() || ny >= current.map.getHeight()) {
-                continue;
+        for (Direction dir : Direction.values()) {
+            if (dir.dx() == dx && dir.dy() == dy) {
+                return dir;
             }
-
-            Tile neighbor = current.map.getTile(nx, ny);
-            if (!(neighbor instanceof RoadTile nextRoad)) {
-                continue;
-            }
-
-            if (previousTile != null && nextRoad == previousTile) {
-                continue;
-            }
-
-            currentDirection = dir;
-            return nextRoad;
         }
 
         return null;
     }
 
-    public void assignRoute(Route r) {
-        this.route = r;
+    public void reversePath(List<RoadTile> newPath) {
+        goingForward = !goingForward;
+        setPath(newPath);
+    }
+
+    public boolean hasReachedStop() {
+        return currentTile != null && nextTile == null;
     }
 
     public RoadTile getCurrentTile() {
@@ -103,18 +154,26 @@ public abstract class Vehicle {
     }
 
     public RoadTile getTargetTile() {
-        return targetTile;
+        return nextTile;
     }
 
     public double getProgress() {
         return progress;
     }
 
-    public void setCurrentTile(RoadTile tile) {
-        this.currentTile = tile;
+    public String getId() {
+        return id;
     }
 
-    public void setTargetTile(RoadTile tile) {
-        this.targetTile = tile;
+    public boolean isGoingForward() {
+        return goingForward;
+    }
+
+    public RoadTile getStopA() {
+        return stopA;
+    }
+
+    public RoadTile getStopB() {
+        return stopB;
     }
 }
