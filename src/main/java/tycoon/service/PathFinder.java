@@ -5,8 +5,9 @@ import java.util.*;
 import tycoon.model.RoadTile;
 import tycoon.model.Tile;
 import tycoon.model.WorldMap;
+import java.io.Serializable;
 
-public class PathFinder {
+public class PathFinder implements Serializable {
     private WorldMap map;
 
     public PathFinder(WorldMap map) {
@@ -16,7 +17,6 @@ public class PathFinder {
     public List<RoadTile> findPath(RoadTile start, RoadTile goal) {
         if (start == null || goal == null) return null;
         
-        // 【核心修复 1】：比较 X 和 Y 坐标，而不是比较内存对象！
         if (start.getPos().x() == goal.getPos().x() && start.getPos().y() == goal.getPos().y()) {
             return new ArrayList<>();
         }
@@ -32,7 +32,6 @@ public class PathFinder {
         while (!queue.isEmpty()) {
             RoadTile current = queue.poll();
 
-            // 【核心修复 2】：同样比较坐标！不管玩家怎么覆盖马路，只要坐标对上了就算找到！
             if (current.getPos().x() == goal.getPos().x() && current.getPos().y() == goal.getPos().y()) {
                 foundGoal = current;
                 break; 

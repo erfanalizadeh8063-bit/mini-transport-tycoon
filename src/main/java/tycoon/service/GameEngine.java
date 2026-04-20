@@ -2,15 +2,11 @@ package tycoon.service;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.io.Serializable;
 
-import tycoon.model.Vehicle;
-import tycoon.model.WorldMap;
-import tycoon.service.PathFinder; 
+import tycoon.model.*; 
 
-/**
- * Orchestrates the simulation logic and time management.
- */
-public class GameEngine {
+public class GameEngine implements Serializable {
     private WorldMap worldMap;
     private List<Vehicle> vehicles;
     private double simulationSpeed = 1.0; 
@@ -25,52 +21,52 @@ public class GameEngine {
         this.pathFinder = new PathFinder(map);
     }
 
-    /**
-     * The main loop call. dt is the real-world time elapsed.
-     */
+
     public void tick(double dt) {
-        if (simulationSpeed == 0) return; // Paused
+        if (simulationSpeed == 0) return;
 
         double effectiveDt = dt * simulationSpeed;
 
-        // 1. Update all tiles (for industry production and city demand)
         for (int x = 0; x < worldMap.getWidth(); x++) {
             for (int y = 0; y < worldMap.getHeight(); y++) {
                 worldMap.getTile(x, y).onTick(effectiveDt);
             }
         }
 
+        double dailyMaintenance = 0;
         for (int i = vehicles.size() - 1; i >= 0; i--) {
-            vehicles.get(i).update(effectiveDt, pathFinder, this);
+            Vehicle v = vehicles.get(i);
+            v.update(effectiveDt, pathFinder, this);
+
+            if (v instanceof SmallTruck) {
+                dailyMaintenance += 2.0 * effectiveDt;
+            } else if (v instanceof HeavyTruck) {
+                dailyMaintenance += 8.0 * effectiveDt;
+            } else if (v instanceof CityBus) {
+                dailyMaintenance += 4.0 * effectiveDt;
+            } else if (v instanceof Coach) {
+                dailyMaintenance += 10.0 * effectiveDt;
+            } else {
+                dailyMaintenance += 5.0 * effectiveDt; 
+            }
         }
         
-        double dailyMaintenance = vehicles.size() * 5.0 * effectiveDt; 
         this.balance -= dailyMaintenance;
     }
-
-
 
     public boolean isBankrupt() {
         return balance < 0;
     }
 
-    /**
-     * Required by GameWindow to render vehicles on the canvas.
-     */
+
     public List<Vehicle> getVehicles() {
         return vehicles;
     }
 
-    /**
-     * Spend money (e.g., when building roads or buying vehicles).
-     */
     public void spend(double amount) {
         this.balance -= amount;
     }
 
-    /**
-     * Earn money (e.g., when delivering cargo).
-     */
     public void earn(double amount) {
         this.balance += amount;
     }
@@ -88,8 +84,6 @@ public class GameEngine {
         return false;
     }
 
-    // --- GETTERS & SETTERS ---
-    
     public void setSimulationSpeed(double speed) {
         this.simulationSpeed = speed;
     }

@@ -13,9 +13,11 @@ public class GameRenderer {
     private Image cityImg;
     private Image factoryImg;
     private Image treeImg; 
-    
-    private Image busImg; 
-    private Image truckImg; 
+    private Image roadImg;
+    private Image smallTruckImg; 
+    private Image heavyTruckImg; 
+    private Image cityBusImg; 
+    private Image coachImg; 
 
     public GameRenderer() {
         try {
@@ -24,8 +26,11 @@ public class GameRenderer {
             factoryImg = new Image(getClass().getResourceAsStream("/factory.png"));
             treeImg = new Image(getClass().getResourceAsStream("/tree.png")); 
             
-            busImg = new Image(getClass().getResourceAsStream("/bus.png")); 
-            truckImg = new Image(getClass().getResourceAsStream("/truck.png")); 
+            roadImg = new Image(getClass().getResourceAsStream("/road.png"));
+            smallTruckImg = new Image(getClass().getResourceAsStream("/small_truck.png")); 
+            heavyTruckImg = new Image(getClass().getResourceAsStream("/heavy_truck.png")); 
+            cityBusImg = new Image(getClass().getResourceAsStream("/city_bus.png")); 
+            coachImg = new Image(getClass().getResourceAsStream("/coach.png")); 
         } catch (Exception e) {
             System.err.println("Error loading sprites: " + e.getMessage());
         }
@@ -70,7 +75,11 @@ public class GameRenderer {
         if (tile instanceof EmptyTile) {
             int trees = ((EmptyTile) tile).getTreeCount();
             if (trees > 0 && treeImg != null && !treeImg.isError()) {
-                gc.drawImage(treeImg, px + 10, py + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+                double size = TILE_SIZE * 0.5; 
+                if (trees >= 1) gc.drawImage(treeImg, px, py, size, size); 
+                if (trees >= 2) gc.drawImage(treeImg, px + size, py + size, size, size); 
+                if (trees >= 3) gc.drawImage(treeImg, px + size, py, size, size); 
+                if (trees == 4) gc.drawImage(treeImg, px, py + size, size, size); 
             }
         }
 
@@ -83,11 +92,18 @@ public class GameRenderer {
     }
 
     private void drawRoadTile(GraphicsContext gc, RoadTile road, int px, int py) {
+        if (roadImg != null && !roadImg.isError()) {
+            gc.drawImage(roadImg, px, py, TILE_SIZE, TILE_SIZE);
+            if (road.hasJunction() && road.getJunction().hasLight()) {
+                drawTrafficLight(gc, road, px, py);
+            }
+            return; 
+        }
+
         double center = TILE_SIZE / 2.0;
         double roadWidth = TILE_SIZE * 0.62;
         double halfRoad = roadWidth / 2.0;
         double laneDash = TILE_SIZE * 0.18;
-        double laneGap = TILE_SIZE * 0.10;
 
         gc.setFill(Color.web("#7a7a7a"));
 
@@ -98,34 +114,18 @@ public class GameRenderer {
 
         gc.fillRect(px + center - halfRoad, py + center - halfRoad, roadWidth, roadWidth);
 
-        if (road.isConnected(Direction.N)) {
-            gc.fillRect(px + center - halfRoad, py, roadWidth, center);
-        }
-        if (road.isConnected(Direction.S)) {
-            gc.fillRect(px + center - halfRoad, py + center, roadWidth, center);
-        }
-        if (road.isConnected(Direction.W)) {
-            gc.fillRect(px, py + center - halfRoad, center, roadWidth);
-        }
-        if (road.isConnected(Direction.E)) {
-            gc.fillRect(px + center, py + center - halfRoad, center, roadWidth);
-        }
+        if (road.isConnected(Direction.N)) gc.fillRect(px + center - halfRoad, py, roadWidth, center);
+        if (road.isConnected(Direction.S)) gc.fillRect(px + center - halfRoad, py + center, roadWidth, center);
+        if (road.isConnected(Direction.W)) gc.fillRect(px, py + center - halfRoad, center, roadWidth);
+        if (road.isConnected(Direction.E)) gc.fillRect(px + center, py + center - halfRoad, center, roadWidth);
 
         gc.setStroke(Color.WHITE);
         gc.setLineWidth(2);
 
-        if (road.isConnected(Direction.N)) {
-            gc.strokeLine(px + center, py, px + center, py + center - halfRoad);
-        }
-        if (road.isConnected(Direction.S)) {
-            gc.strokeLine(px + center, py + center + halfRoad, px + center, py + TILE_SIZE);
-        }
-        if (road.isConnected(Direction.W)) {
-            gc.strokeLine(px, py + center, px + center - halfRoad, py + center);
-        }
-        if (road.isConnected(Direction.E)) {
-            gc.strokeLine(px + center + halfRoad, py + center, px + TILE_SIZE, py + center);
-        }
+        if (road.isConnected(Direction.N)) gc.strokeLine(px + center, py, px + center, py + center - halfRoad);
+        if (road.isConnected(Direction.S)) gc.strokeLine(px + center, py + center + halfRoad, px + center, py + TILE_SIZE);
+        if (road.isConnected(Direction.W)) gc.strokeLine(px, py + center, px + center - halfRoad, py + center);
+        if (road.isConnected(Direction.E)) gc.strokeLine(px + center + halfRoad, py + center, px + TILE_SIZE, py + center);
 
         if (road.getConnectionCount() >= 2) {
             gc.strokeLine(px + center - laneDash / 2, py + center, px + center + laneDash / 2, py + center);
@@ -138,26 +138,31 @@ public class GameRenderer {
             gc.strokeRect(px + center - halfRoad + 4, py + center - halfRoad + 4, roadWidth - 8, roadWidth - 8);
 
             if (road.getJunction().hasLight()) {
-                TrafficLight light = road.getJunction().getTrafficLight();
-
-                double boxW = 20;
-                double boxH = 14;
-                double boxX = px + center - boxW / 2;
-                double boxY = py + center - boxH / 2;
-
-                gc.setFill(Color.BLACK);
-                gc.fillRoundRect(boxX, boxY, boxW, boxH, 4, 4);
-
-                Color nsColor = (light.getPhase() == SignalPhase.NS_GREEN) ? Color.LIMEGREEN : Color.RED;
-                Color ewColor = (light.getPhase() == SignalPhase.EW_GREEN) ? Color.LIMEGREEN : Color.RED;
-
-                gc.setFill(nsColor);
-                gc.fillOval(px + center - 3, py + center - 6, 6, 6);
-
-                gc.setFill(ewColor);
-                gc.fillOval(px + center + 3, py + center, 6, 6);
+                drawTrafficLight(gc, road, px, py);
             }
         }
+    }
+
+    private void drawTrafficLight(GraphicsContext gc, RoadTile road, int px, int py) {
+        double center = TILE_SIZE / 2.0;
+        TrafficLight light = road.getJunction().getTrafficLight();
+
+        double boxW = 20;
+        double boxH = 14;
+        double boxX = px + center - boxW / 2;
+        double boxY = py + center - boxH / 2;
+
+        gc.setFill(Color.BLACK);
+        gc.fillRoundRect(boxX, boxY, boxW, boxH, 4, 4);
+
+        Color nsColor = (light.getPhase() == SignalPhase.NS_GREEN) ? Color.LIMEGREEN : Color.RED;
+        Color ewColor = (light.getPhase() == SignalPhase.EW_GREEN) ? Color.LIMEGREEN : Color.RED;
+
+        gc.setFill(nsColor);
+        gc.fillOval(px + center - 3, py + center - 6, 6, 6);
+
+        gc.setFill(ewColor);
+        gc.fillOval(px + center + 3, py + center, 6, 6);
     }
 
     private void drawBuildingTile(GraphicsContext gc, Tile tile, int x, int y) {
@@ -190,8 +195,7 @@ public class GameRenderer {
     private void drawVehicle(GraphicsContext gc, Vehicle v) {
         RoadTile start = v.getCurrentTile();
         RoadTile end = v.getTargetTile();
-        if (start == null)
-            return;
+        if (start == null) return;
 
         double drawX = start.getPos().x() * TILE_SIZE;
         double drawY = start.getPos().y() * TILE_SIZE;
@@ -204,26 +208,46 @@ public class GameRenderer {
             drawY += (endY - drawY) * p;
         }
 
-        if (v instanceof Truck) {
-            if (truckImg != null && !truckImg.isError()) {
-                gc.drawImage(truckImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+        double imgX = drawX + TILE_SIZE * 0.15;
+        double imgY = drawY + TILE_SIZE * 0.15;
+        double imgSize = TILE_SIZE * 0.7;
+
+        double circleX = drawX + TILE_SIZE * 0.2;
+        double circleY = drawY + TILE_SIZE * 0.2;
+        double circleSize = TILE_SIZE * 0.6;
+
+        if (v instanceof SmallTruck) {
+            if (smallTruckImg != null && !smallTruckImg.isError()) {
+                gc.drawImage(smallTruckImg, imgX, imgY, imgSize, imgSize);
             } else {
-                gc.setFill(Color.web("#FF9AA2")); 
-                gc.fillOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(3);
-                gc.strokeOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+                drawFallbackCircle(gc, Color.web("#FFDAC1"), circleX, circleY, circleSize);
             }
-        } else if (v instanceof Bus) {
-            if (busImg != null && !busImg.isError()) {
-                gc.drawImage(busImg, drawX + TILE_SIZE*0.15, drawY + TILE_SIZE*0.15, TILE_SIZE*0.7, TILE_SIZE*0.7);
+        } else if (v instanceof HeavyTruck) {
+            if (heavyTruckImg != null && !heavyTruckImg.isError()) {
+                gc.drawImage(heavyTruckImg, imgX, imgY, imgSize, imgSize);
             } else {
-                gc.setFill(Color.web("#A8D8EA")); 
-                gc.fillOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(3);
-                gc.strokeOval(drawX + TILE_SIZE * 0.2, drawY + TILE_SIZE * 0.2, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+                drawFallbackCircle(gc, Color.web("#FF9AA2"), circleX, circleY, circleSize);
+            }
+        } else if (v instanceof CityBus) {
+            if (cityBusImg != null && !cityBusImg.isError()) {
+                gc.drawImage(cityBusImg, imgX, imgY, imgSize, imgSize);
+            } else {
+                drawFallbackCircle(gc, Color.web("#A8D8EA"), circleX, circleY, circleSize);
+            }
+        } else if (v instanceof Coach) {
+            if (coachImg != null && !coachImg.isError()) {
+                gc.drawImage(coachImg, imgX, imgY, imgSize, imgSize);
+            } else {
+                drawFallbackCircle(gc, Color.web("#85C1E9"), circleX, circleY, circleSize);
             }
         }
+    }
+
+    private void drawFallbackCircle(GraphicsContext gc, Color color, double x, double y, double size) {
+        gc.setFill(color); 
+        gc.fillOval(x, y, size, size);
+        gc.setStroke(Color.WHITE);
+        gc.setLineWidth(3);
+        gc.strokeOval(x, y, size, size);
     }
 }

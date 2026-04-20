@@ -4,22 +4,21 @@ import tycoon.model.WorldMap;
 import java.io.*;
 
 public class SaveManager {
-    public static boolean saveGame(WorldMap map, String filename) {
+    public static boolean saveGameData(WorldMap map, GameEngine engine, double time, String filename) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
-            oos.writeObject(map);
+            oos.writeObject(new Object[]{ map, engine, time });
+            System.out.println("💾 Game saved successfully!");
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.err.println("❌ Error saving game:");
             e.printStackTrace();
             return false;
         }
     }
 
-    public static WorldMap loadGame(String filename) {
+    public static Object[] loadGameData(String filename) throws Exception {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
-            return (WorldMap) ois.readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            return (Object[]) ois.readObject();
         }
     }
 }

@@ -1,12 +1,12 @@
 package tycoon.ui;
 
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import tycoon.model.*;
 
 public class MinimapRenderer {
     private static final int CELL = 4;
+    private static final int TILE_SIZE = 64;
 
     public void render(GraphicsContext gc, WorldMap map) {
         gc.clearRect(0, 0, map.getWidth() * CELL, map.getHeight() * CELL);
@@ -18,14 +18,19 @@ public class MinimapRenderer {
         }
     }
 
+
     public void drawViewport(GraphicsContext gc, double scrollH, double scrollV,
                               double viewW, double viewH, double mapW, double mapH) {
-        double x = scrollH * (mapW - viewW) * CELL / mapW;
-        double y = scrollV * (mapH - viewH) * CELL / mapH;
-        double w = viewW * CELL / mapW * mapW;
-        double h = viewH * CELL / mapH * mapH;
+        double ratio = (double) CELL / TILE_SIZE;
+        
+        double x = scrollH * (mapW - viewW) * ratio;
+        double y = scrollV * (mapH - viewH) * ratio;
+        
+        double w = viewW * ratio;
+        double h = viewH * ratio;
+        
         gc.setStroke(Color.WHITE);
-        gc.setLineWidth(1);
+        gc.setLineWidth(1.5); 
         gc.strokeRect(x, y, w, h);
     }
 
@@ -33,8 +38,15 @@ public class MinimapRenderer {
         if (tile instanceof RoadTile)    return Color.GRAY;
         if (tile instanceof City)        return Color.DARKSLATEGRAY;
         if (tile instanceof Industry)    return Color.SADDLEBROWN;
-        if (tile instanceof ForestTile)  return Color.DARKGREEN;
-        return Color.web("#91cf60");
+        
+
+        if (tile instanceof EmptyTile) {
+            if (((EmptyTile) tile).getTreeCount() > 0) {
+                return Color.DARKGREEN; 
+            }
+        }
+        
+        return Color.web("#91cf60"); 
     }
 
     public static int cellSize() { return CELL; }

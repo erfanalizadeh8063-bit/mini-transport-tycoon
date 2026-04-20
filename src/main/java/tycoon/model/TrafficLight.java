@@ -50,4 +50,12 @@ public class TrafficLight implements Serializable {
     public SignalPhase getPhase() {
         return phase;
     }
+
+    public double getGreenNS() {
+        return greenNS;
+    }
+
+    public double getGreenEW() {
+        return greenEW;
+    }
 }
