@@ -36,12 +36,20 @@ public abstract class Vehicle implements Serializable {
     }
 
     public void update(double dt, PathFinder pathFinder, GameEngine engine) {
-        // 如果当前没有目标格子，去寻找下一段路
         if (targetTile == null && route != null) {
             startNewSegment(pathFinder, engine);
         }
 
         if (targetTile == null) return;
+
+        if (isPathBlocked()) {
+
+            if (progress < 0.45) {
+                progress += (speed * dt);
+                if (progress > 0.45) progress = 0.45;
+            }
+            return;
+        }
 
         progress += (speed * dt);
 
@@ -50,15 +58,18 @@ public abstract class Vehicle implements Serializable {
         }
     }
 
+    private boolean isPathBlocked() {
+        if (targetTile == null || currentDirection == null) return false;
+        return !targetTile.canEnter(currentDirection);
+    }
+
     private void startNewSegment(PathFinder pathFinder, GameEngine engine) {
         ITransportPoint nextStopPoint = route.getCurrentTarget();
         if (nextStopPoint == null) return;
 
         RoadTile destination = nextStopPoint.getAccessTile(); 
         
-        if (destination == null) {
-            return;
-        }
+        if (destination == null) return;
 
         List<RoadTile> path = pathFinder.findPath(this.currentTile, destination);
         
@@ -70,6 +81,10 @@ public abstract class Vehicle implements Serializable {
                 this.targetTile = currentSegmentPath.remove(0);
                 this.progress = 0.0;
                 updateDirection();
+                
+                if (currentTile != null && currentDirection != null) {
+                    currentTile.reserve(currentDirection, this);
+                }
             }
         } else {
             System.out.println("Warning: " + id + " waiting for road connection.");
@@ -77,6 +92,10 @@ public abstract class Vehicle implements Serializable {
     }
 
     private void performStopActions(GameEngine engine) {
+        // 到站了，把座位腾出来
+        if (currentTile != null && currentDirection != null) {
+            currentTile.release(currentDirection);
+        }
         targetTile = null; 
         ITransportPoint currentStop = route.getCurrentTarget();
         
@@ -87,11 +106,9 @@ public abstract class Vehicle implements Serializable {
                     currentLoad -= unloaded;
                     double earned = unloaded * 10.0; 
                     engine.earn(earned);
-                    System.out.println("💰 " + id + " unloaded " + unloaded + " " + currentCargoType + ", earned $" + earned);
                 }
                 if (currentLoad == 0) currentCargoType = null;
             }
-
 
             if (currentLoad < capacity) {
                 int amountToLoad = capacity - currentLoad;
@@ -99,7 +116,6 @@ public abstract class Vehicle implements Serializable {
                 if (loaded > 0) {
                     currentLoad += loaded;
                     currentCargoType = allowedCargoType;
-                    System.out.println("📦 " + id + " loaded " + loaded + " " + currentCargoType);
                 }
             }
         }
@@ -120,12 +136,13 @@ public abstract class Vehicle implements Serializable {
         if (!currentSegmentPath.isEmpty()) {
             targetTile = currentSegmentPath.remove(0);
             updateDirection();
+            
+            if (currentTile != null && currentDirection != null) {
+                currentTile.reserve(currentDirection, this);
+            }
         } else {
+            targetTile = null;
             performStopActions(engine);
-        }
-
-        if (currentTile != null && targetTile != null && currentDirection != null) {
-            currentTile.reserve(currentDirection, this);
         }
     }
 

@@ -147,17 +147,19 @@ public class GameWindow extends Application {
             }
         }
 
-
+        // 2. 伐木场
         Industry lumberMill = new Industry(new Vector2(15, 2), 0.0, worldMap, "Lumber Mill", CargoType.WOOD);
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) { worldMap.setTile(15 + i, 2 + j, lumberMill); }
         }
 
+        // 3. 铁矿场
         Industry ironMine = new Industry(new Vector2(15, 12), 0.0, worldMap, "Iron Mine", CargoType.IRON_ORE);
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) { worldMap.setTile(15 + i, 12 + j, ironMine); }
         }
 
+        // 4. 钢铁厂
         Industry steelMill = new Industry(new Vector2(24, 7), 0.0, worldMap, "Steel Mill", CargoType.STEEL);
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) { worldMap.setTile(24 + i, 7 + j, steelMill); }
@@ -307,9 +309,40 @@ public class GameWindow extends Application {
                     break;
 
                 case TRAFFIC_LIGHT:
-                    if (tile instanceof RoadTile) {
-                        if (engine.spendMoney(50)) updateStatus("🚦 Traffic light installed!");
-                        else updateStatus("❌ Not enough coins for a Traffic Light.");
+                    if (tile instanceof RoadTile road) {
+                        // 【终极防弹补丁】：自己现场去数四周有几条路
+                        int realConnections = 0;
+                        if (x > 0 && worldMap.getTile(x - 1, y) instanceof RoadTile) realConnections++;
+                        if (x < worldMap.getWidth() - 1 && worldMap.getTile(x + 1, y) instanceof RoadTile) realConnections++;
+                        if (y > 0 && worldMap.getTile(x, y - 1) instanceof RoadTile) realConnections++;
+                        if (y < worldMap.getHeight() - 1 && worldMap.getTile(x, y + 1) instanceof RoadTile) realConnections++;
+
+                        // 只要原版逻辑 >=3 或者现场扫出 >=3，都合法！
+                        if (road.getConnectionCount() >= 3 || realConnections >= 3) {
+                            
+                            // 兜底补丁：如果底层没有实例化路口对象，强行实例化一个
+                            if (!road.hasJunction()) {
+                                road.setJunction(new Junction()); 
+                            }
+                            
+                            if (road.hasJunction()) {
+                                if (!road.getJunction().hasLight()) {
+                                    if (engine.spendMoney(50)) {
+                                        // 完美调用刚才核对过的 install 方法
+                                        road.getJunction().install(new TrafficLight()); 
+                                        updateStatus("🚦 Traffic light successfully installed!");
+                                    } else {
+                                        updateStatus("❌ Not enough coins for a Traffic Light.");
+                                    }
+                                } else {
+                                    updateStatus("⚠️ This intersection already has a traffic light!");
+                                }
+                            }
+                        } else {
+                            updateStatus("❌ Traffic lights can ONLY be placed at intersections (3+ roads)!");
+                        }
+                    } else {
+                        updateStatus("❌ Please click on a road intersection!");
                     }
                     break;
 
@@ -536,7 +569,6 @@ public class GameWindow extends Application {
         return btn;
     }
 
-
     private void updateDetailPanel(Facility f) {
         detailPanel.getChildren().clear();
         Label title = new Label("📋 Facility Info");
@@ -618,7 +650,7 @@ public class GameWindow extends Application {
             double currentNS = light.getGreenNS();
             double currentEW = light.getGreenEW();
             if (isNS && currentNS < 20) light.setTimings(currentNS + 1, currentEW);
-            if (!isNS && currentEW < 20) light.setTimings(currentNS, currentEW + 1);
+            if (!isNS && currentEW < 20) light.setTimings(currentNS, currentEW - 1);
             
             if (isNS) labelToUpdate.setText("⬆️⬇️ NS Green: " + (int)light.getGreenNS() + "s");
             else labelToUpdate.setText("⬅️➡️ EW Green: " + (int)light.getGreenEW() + "s");

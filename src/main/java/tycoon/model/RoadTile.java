@@ -83,10 +83,6 @@ public class RoadTile extends Tile {
             return false;
         }
 
-        if (!connections.contains(dir.opposite())) {
-            return false;
-        }
-
         if (occupancy.containsKey(dir)) {
             return false;
         }
@@ -95,7 +91,7 @@ public class RoadTile extends Tile {
             return junction.getTrafficLight().canPass(dir);
         }
 
-        return true;
+        return true; 
     }
 
     public void reserve(Direction dir, Vehicle v) {
@@ -112,9 +108,13 @@ public class RoadTile extends Tile {
 
     @Override
     public void onTick(double dt) {
+        if (junction != null && junction.hasLight()) {
+            junction.getTrafficLight().update(dt); 
+        }
     }
 
     public double getSpeedLimit() {
         return speedLimit;
     }
+
 }
