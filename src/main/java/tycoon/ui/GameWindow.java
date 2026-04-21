@@ -466,11 +466,12 @@ public class GameWindow extends Application {
 
                     renderer.render(canvas.getGraphicsContext2D(), worldMap, engine.getVehicles());
                     minimapRenderer.render(minimapCanvas.getGraphicsContext2D(), worldMap);
+                    minimapRenderer.renderVehicles(minimapCanvas.getGraphicsContext2D(), engine.getVehicles());
 
                     if (scrollPane.getViewportBounds() != null) {
                         minimapRenderer.drawViewport(
                             minimapCanvas.getGraphicsContext2D(),
-                            scrollPane.getHvalue(), 
+                            scrollPane.getHvalue(),
                             scrollPane.getVvalue(),
                             scrollPane.getViewportBounds().getWidth(),
                             scrollPane.getViewportBounds().getHeight(),
@@ -478,6 +479,7 @@ public class GameWindow extends Application {
                             worldMap.getHeight() * TILE_SIZE
                         );
                     }
+                    minimapRenderer.drawLegend(minimapCanvas.getGraphicsContext2D(), 4, 4);
 
                     if (engine.isBankrupt()) showGameOver();
                 }
