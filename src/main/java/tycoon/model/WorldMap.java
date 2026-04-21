@@ -108,6 +108,26 @@ public class WorldMap implements Serializable {
         }
     }
 
+    /**
+     * Returns all ForestTiles currently on the map.
+     */
+    public List<ForestTile> getForestTiles() {
+        List<ForestTile> forests = new ArrayList<>();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                if (grid[x][y] instanceof ForestTile f) forests.add(f);
+            }
+        }
+        return forests;
+    }
+
+    /**
+     * Returns true if the tile at (x,y) is a forest.
+     */
+    public boolean isForest(int x, int y) {
+        return getTile(x, y) instanceof ForestTile;
+    }
+
     public void updateTrafficLights(double dt) {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
