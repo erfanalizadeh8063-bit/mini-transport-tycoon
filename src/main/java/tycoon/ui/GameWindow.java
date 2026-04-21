@@ -280,10 +280,29 @@ public class GameWindow extends Application {
                 case BUILD_ROAD:
                     if (tile instanceof EmptyTile || tile instanceof ForestTile) {
                         double cost = (tile instanceof ForestTile f) ? f.getTotalBuildCost() : 100;
-                        if (engine.spendMoney(cost)) {
-                            worldMap.placeRoad(x, y, 50.0);
-                            updateStatus("🔨 Road built! Spent $" + (int)cost);
-                        } else updateStatus("❌ Oops! Not enough coins to build a road.");
+                        if (tile instanceof ForestTile f) {
+                            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                            confirm.setTitle("Clear Forest");
+                            confirm.setHeaderText("This tile has " + f.getTreeCount() + " tree(s)");
+                            confirm.setContentText("Clearing cost: $" + (int)f.getClearingCost() + "\nTotal road cost: $" + (int)cost + "\nProceed?");
+                            confirm.showAndWait().ifPresent(response -> {
+                                if (response == ButtonType.OK) {
+                                    if (engine.spendMoney(cost)) {
+                                        worldMap.placeRoad(x, y, 50.0);
+                                        updateStatus("🌲 Forest cleared & road built! Spent $" + (int)cost);
+                                    } else {
+                                        updateStatus("❌ Not enough coins to clear forest. Need $" + (int)cost);
+                                    }
+                                }
+                            });
+                        } else {
+                            if (engine.spendMoney(cost)) {
+                                worldMap.placeRoad(x, y, 50.0);
+                                updateStatus("🔨 Road built! Spent $" + (int)cost);
+                            } else {
+                                updateStatus("❌ Not enough coins to build a road.");
+                            }
+                        }
                     } else updateStatus("🌱 You can only build roads on empty land!");
                     break;
 
@@ -524,7 +543,7 @@ public class GameWindow extends Application {
         ToggleGroup tools = new ToggleGroup();
 
         ToggleButton inspectBtn = createToolBtn("🔍 Inspect\n(Info)");
-        ToggleButton roadBtn = createToolBtn("🔨 Build Road\n($100)");
+        ToggleButton roadBtn = createToolBtn("🔨 Build Road\n($100, +$50/tree)");
         ToggleButton stopBtn = createToolBtn("🚏 Place Stop\n($200)");
         ToggleButton lightBtn = createToolBtn("🚦 Traffic Light\n($50)");
         ToggleButton routeBtn = createToolBtn("🚛 Buy Vehicle\n(Route)");
@@ -544,7 +563,7 @@ public class GameWindow extends Application {
                 inspectBtn.setSelected(true); 
             } else {
                 if (newVal == inspectBtn) { currentTool = ToolMode.INSPECT; updateStatus("🔍 Mode: Inspecting tiles."); }
-                else if (newVal == roadBtn) { currentTool = ToolMode.BUILD_ROAD; updateStatus("🔨 Mode: Click empty land to build roads."); }
+                else if (newVal == roadBtn) { currentTool = ToolMode.BUILD_ROAD; updateStatus("🔨 Mode: Click empty land to build roads. Forest tiles cost $50 extra per tree."); }
                 else if (newVal == stopBtn) { currentTool = ToolMode.PLACE_STOP; updateStatus("🚏 Mode: Click land adjacent to a facility to place a Stop."); }
                 else if (newVal == lightBtn) { currentTool = ToolMode.TRAFFIC_LIGHT; updateStatus("🚦 Mode: Click a road to install Traffic Lights."); }
                 else if (newVal == routeBtn) { 
