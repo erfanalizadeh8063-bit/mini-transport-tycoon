@@ -170,7 +170,8 @@ public class GameWindow extends Application {
             for (int y = 0; y < worldMap.getHeight(); y++) {
                 Tile t = worldMap.getTile(x, y);
                 if (t instanceof EmptyTile && rand.nextDouble() < 0.15) {
-                    ((EmptyTile) t).setTreeCount(rand.nextInt(4) + 1); 
+                    worldMap.setTile(x, y, new ForestTile(
+                        new Vector2(x, y), 0.0, worldMap, rand.nextInt(4) + 1));
                 }
             }
         }
@@ -277,10 +278,10 @@ public class GameWindow extends Application {
                     break;
 
                 case BUILD_ROAD:
-                    if (tile instanceof EmptyTile) {
-                        double cost = (((EmptyTile) tile).getTreeCount() > 0) ? 200 : 100;
+                    if (tile instanceof EmptyTile || tile instanceof ForestTile) {
+                        double cost = (tile instanceof ForestTile f) ? f.getTotalBuildCost() : 100;
                         if (engine.spendMoney(cost)) {
-                            worldMap.setTile(x, y, new RoadTile(new Vector2(x, y), 0.0, worldMap, 50.0));
+                            worldMap.placeRoad(x, y, 50.0);
                             updateStatus("🔨 Road built! Spent $" + (int)cost);
                         } else updateStatus("❌ Oops! Not enough coins to build a road.");
                     } else updateStatus("🌱 You can only build roads on empty land!");

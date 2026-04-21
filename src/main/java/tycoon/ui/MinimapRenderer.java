@@ -40,13 +40,8 @@ public class MinimapRenderer {
         if (tile instanceof Industry)    return Color.SADDLEBROWN;
         
 
-        if (tile instanceof EmptyTile) {
-            if (((EmptyTile) tile).getTreeCount() > 0) {
-                return Color.DARKGREEN; 
-            }
-        }
-        
-        return Color.web("#91cf60"); 
+        if (tile instanceof ForestTile f) return f.isFullyGrown() ? Color.DARKGREEN : Color.GREEN;
+        return Color.web("#91cf60");
     }
 
     public static int cellSize() { return CELL; }

@@ -72,14 +72,16 @@ public class GameRenderer {
             return;
         }
 
-        if (tile instanceof EmptyTile) {
-            int trees = ((EmptyTile) tile).getTreeCount();
-            if (trees > 0 && treeImg != null && !treeImg.isError()) {
-                double size = TILE_SIZE * 0.5; 
-                if (trees >= 1) gc.drawImage(treeImg, px, py, size, size); 
-                if (trees >= 2) gc.drawImage(treeImg, px + size, py + size, size, size); 
-                if (trees >= 3) gc.drawImage(treeImg, px + size, py, size, size); 
-                if (trees == 4) gc.drawImage(treeImg, px, py + size, size, size); 
+        if (tile instanceof ForestTile forest) {
+            int trees = forest.getTreeCount();
+            if (treeImg != null && !treeImg.isError()) {
+                double size = TILE_SIZE * 0.5;
+                if (trees >= 1) gc.drawImage(treeImg, px, py, size, size);
+                if (trees >= 2) gc.drawImage(treeImg, px + size, py + size, size, size);
+                if (trees >= 3) gc.drawImage(treeImg, px + size, py, size, size);
+                if (trees == 4) gc.drawImage(treeImg, px, py + size, size, size);
+            } else {
+                drawFallbackTrees(gc, px, py, trees);
             }
         }
 
@@ -240,6 +242,14 @@ public class GameRenderer {
             } else {
                 drawFallbackCircle(gc, Color.web("#85C1E9"), circleX, circleY, circleSize);
             }
+        }
+    }
+
+    private void drawFallbackTrees(GraphicsContext gc, int px, int py, int count) {
+        double[][] offsets = {{0.1,0.1},{0.55,0.1},{0.1,0.55},{0.55,0.55}};
+        gc.setFill(Color.DARKGREEN);
+        for (int i = 0; i < count; i++) {
+            gc.fillOval(px + offsets[i][0]*TILE_SIZE, py + offsets[i][1]*TILE_SIZE, TILE_SIZE*0.3, TILE_SIZE*0.3);
         }
     }
 
