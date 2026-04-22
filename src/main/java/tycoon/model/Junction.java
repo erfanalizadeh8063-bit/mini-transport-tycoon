@@ -1,14 +1,14 @@
 package tycoon.model;
-
-public class Junction {
+import java.io.Serializable;
+public class Junction  implements Serializable {
     private TrafficLight trafficLight;
 
     public Junction() {
         this.trafficLight = null;
     }
 
-    public void installTrafficLight(TrafficLight trafficLight) {
-        this.trafficLight = trafficLight;
+    public void install(TrafficLight light) {
+        this.trafficLight = light;
     }
 
     public boolean hasLight() {

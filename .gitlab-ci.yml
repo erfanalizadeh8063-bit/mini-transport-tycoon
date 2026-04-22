@@ -1,0 +1,33 @@
+image: maven:3.9-eclipse-temurin-17
+
+stages:
+  - build
+  - test
+
+build_project:
+  stage: build
+  script:
+    - echo "正在编译项目代码..."
+    - mvn clean compile
+  only:
+    - master
+    - main
+    - developing
+
+run_tests:
+  stage: test
+  script:
+    - echo "正在运行所有的 JUnit 单元测试..."
+    - mvn test
+  artifacts:
+    paths:
+      - target/site/jacoco/
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/site/jacoco/jacoco.xml
+    expire_in: 1 week
+  only:
+    - master
+    - main
+    - developing

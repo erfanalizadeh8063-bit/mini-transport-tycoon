@@ -1,30 +1,44 @@
 package tycoon.model;
 
-public class ForestTile extends Tile {
+import java.io.Serializable;
+
+/**
+ * Represents a forest tile on the map.
+ * Trees grow over time (1 to 4) and spread to adjacent empty tiles.
+ * Building roads on forest tiles costs more due to clearing.
+ */
+public class ForestTile extends Tile implements Serializable {
+
+    public static final int MIN_TREES = 1;
+    public static final int MAX_TREES = 4;
+    public static final double GROWTH_INTERVAL = 30.0;
+    public static final double SPREAD_INTERVAL = 60.0;
+    public static final double BASE_ROAD_COST = 100.0;
+    public static final double COST_PER_TREE = 50.0;
+
     private int treeCount;
     private double growthTimer;
-
-    private static final double GROWTH_INTERVAL = 30.0;
-    private static final double SPREAD_INTERVAL = 60.0;
-    private static final double BASE_CLEAR_COST = 50.0;
+    private double spreadTimer;
 
     public ForestTile(Vector2 pos, double height, WorldMap map, int treeCount) {
         super(pos, height, map);
-        this.treeCount = Math.max(1, Math.min(4, treeCount));
-        this.growthTimer = 0;
+        this.treeCount = Math.max(MIN_TREES, Math.min(MAX_TREES, treeCount));
+        this.growthTimer = 0.0;
+        this.spreadTimer = 0.0;
     }
 
     @Override
     public void onTick(double dt) {
         growthTimer += dt;
+        spreadTimer += dt;
 
-        if (treeCount < 4 && growthTimer >= GROWTH_INTERVAL) {
+        if (treeCount < MAX_TREES && growthTimer >= GROWTH_INTERVAL) {
             treeCount++;
-            growthTimer = 0;
+            growthTimer = 0.0;
         }
 
-        if (treeCount == 4 && growthTimer >= SPREAD_INTERVAL) {
-            growthTimer = 0;
+        if (treeCount == MAX_TREES && spreadTimer >= SPREAD_INTERVAL) {
+            spreadTimer = 0.0;
             spreadToNeighbour();
         }
     }
@@ -32,20 +46,53 @@ public class ForestTile extends Tile {
     private void spreadToNeighbour() {
         for (Tile neighbour : map.neighbors(this)) {
             if (neighbour instanceof EmptyTile) {
-                map.setTile(neighbour.getPos().x(), neighbour.getPos().y(),
-                        new ForestTile(neighbour.getPos(), neighbour.getHeight(), map, 1));
+                map.setTile(
+                    neighbour.getPos().x(),
+                    neighbour.getPos().y(),
+                    new ForestTile(neighbour.getPos(), neighbour.getHeight(), map, MIN_TREES)
+                );
                 return;
             }
         }
     }
 
-    @Override
-    public boolean isBuildable() { return true; }
-
+    /**
+     * Clearing cost scales with tree density:
+     * 1 tree = +$50, 2 trees = +$100, 3 trees = +$150, 4 trees = +$200
+     */
     @Override
     public double getBuildCostModifier() {
-        return 1.0 + (treeCount * BASE_CLEAR_COST / 100.0);
+        return (BASE_ROAD_COST + (treeCount * COST_PER_TREE)) / BASE_ROAD_COST;
     }
 
-    public int getTreeCount() { return treeCount; }
+    /**
+     * Returns the total road building cost including clearing cost.
+     */
+    public double getClearingCost() {
+        return treeCount * COST_PER_TREE;
+    }
+
+    /**
+     * Returns the total cost to build a road on this tile.
+     */
+    public double getTotalBuildCost() {
+        return BASE_ROAD_COST + getClearingCost();
+    }
+
+    @Override
+    public boolean isBuildable() {
+        return true;
+    }
+
+    public int getTreeCount() {
+        return treeCount;
+    }
+
+    public void setTreeCount(int count) {
+        this.treeCount = Math.max(MIN_TREES, Math.min(MAX_TREES, count));
+    }
+
+    public boolean isFullyGrown() {
+        return treeCount == MAX_TREES;
+    }
 }

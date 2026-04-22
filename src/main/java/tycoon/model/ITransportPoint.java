@@ -5,6 +5,9 @@ package tycoon.model;
  * Both City and Industry implement this to allow universal vehicle interaction.
  */
 public interface ITransportPoint {
+    String getName();
+
+    RoadTile getAccessTile();
     /**
      * Attempts to load a specific amount of cargo from this point onto a vehicle.
      * @param type The type of cargo (e.g., PASSENGERS, GOODS_A)[cite: 30].
