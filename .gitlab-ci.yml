@@ -13,11 +13,20 @@ build_project:
     - master
     - main
     - developing
+
 run_tests:
   stage: test
   script:
     - echo "正在运行所有的 JUnit 单元测试..."
     - mvn test
+  artifacts:
+    paths:
+      - target/site/jacoco/
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/site/jacoco/jacoco.xml
+    expire_in: 1 week
   only:
     - master
     - main
