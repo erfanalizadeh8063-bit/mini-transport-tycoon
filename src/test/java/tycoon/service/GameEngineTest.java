@@ -3,6 +3,9 @@ package tycoon.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tycoon.model.WorldMap;
+import tycoon.model.Vehicle;
+import tycoon.model.SmallTruck;
+import tycoon.model.CargoType;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,5 +40,22 @@ public class GameEngineTest {
         assertFalse(engine.isBankrupt(), "Engine should not be bankrupt in the initial state.");
         engine.spend(10001.0);
         assertTrue(engine.isBankrupt(), "Engine should report bankruptcy when balance falls below zero.");
+    }
+
+    @Test
+    public void testEngineCoreLoop_TickAndVehicles() {
+        Vehicle testTruck = new SmallTruck("TRUCK_TEST", CargoType.WOOD);
+        engine.addVehicle(testTruck);
+        
+        assertFalse(engine.getVehicles().isEmpty(), "Engine should successfully store added vehicles.");
+        assertEquals(1, engine.getVehicles().size(), "Engine vehicle list size should be 1.");
+
+        engine.setSimulationSpeed(2.0);
+        assertEquals(2.0, engine.getSimulationSpeed(), "Engine should correctly update simulation speed.");
+
+
+        assertDoesNotThrow(() -> {
+            engine.tick(0.5); 
+        }, "Engine tick should execute smoothly without throwing exceptions.");
     }
 }

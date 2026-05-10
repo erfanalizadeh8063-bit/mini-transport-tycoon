@@ -2,7 +2,11 @@ package tycoon.model;
 
 import java.util.List;
 import java.io.Serializable;
-
+/**
+ * Defines an ordered sequence of transport points for a vehicle to follow.
+ * Provides logic to track the current target and advance to the next 
+ * stop in a circular loop once a destination is reached.
+ */
 public class Route implements Serializable {
     private List<ITransportPoint> stops; 
     private int currentIndex;            

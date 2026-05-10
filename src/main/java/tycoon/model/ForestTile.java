@@ -1,13 +1,12 @@
 package tycoon.model;
 
-import java.io.Serializable;
 
 /**
  * Represents a forest tile on the map.
  * Trees grow over time (1 to 4) and spread to adjacent empty tiles.
  * Building roads on forest tiles costs more due to clearing.
  */
-public class ForestTile extends Tile implements Serializable {
+public class ForestTile extends Tile {
 
     public static final int MIN_TREES = 1;
     public static final int MAX_TREES = 4;

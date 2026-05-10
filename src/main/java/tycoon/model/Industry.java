@@ -1,5 +1,9 @@
 package tycoon.model;
-
+/**
+ * A facility that produces a specific type of cargo over time.
+ * Uses a production buffer to generate goods at a steady rate, 
+ * which can then be collected by transport vehicles.
+ */
 public class Industry extends Facility {
     private CargoType produces;
     private double productionBuffer = 0.0; 

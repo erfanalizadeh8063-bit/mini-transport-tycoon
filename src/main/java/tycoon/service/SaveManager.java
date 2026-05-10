@@ -2,7 +2,11 @@ package tycoon.service;
 
 import tycoon.model.WorldMap;
 import java.io.*;
-
+/**
+ * Handles the serialization and deserialization of game states.
+ * This utility class allows the current WorldMap, GameEngine, and simulation 
+ * time to be saved to and loaded from external binary files.
+ */
 public class SaveManager {
     public static boolean saveGameData(WorldMap map, GameEngine engine, double time, String filename) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {

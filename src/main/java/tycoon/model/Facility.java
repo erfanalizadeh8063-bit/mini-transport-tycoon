@@ -3,7 +3,12 @@ package tycoon.model;
 import java.util.HashMap;
 import java.util.Map;
 
-
+/**
+ * Abstract base class for all functional buildings (Industries, Cities) 
+ * that act as transport points.
+ * Manages an internal inventory of cargo and provides standardized 
+ * methods for loading and unloading goods.
+ */
 public abstract class Facility extends Tile implements ITransportPoint {
     private String name;
     protected Map<CargoType, Integer> inventory;

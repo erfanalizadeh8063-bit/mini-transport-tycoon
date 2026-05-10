@@ -5,7 +5,11 @@ import tycoon.service.GameEngine;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.Serializable;
-
+/**
+ * Abstract base class for all vehicles in the simulation.
+ * Handles autonomous movement, path following using PathFinder, and cargo
+ * loading/unloading logic at transport points.
+ */
 public abstract class Vehicle implements Serializable {
     protected String id;
     protected double speed;      
@@ -161,4 +165,19 @@ public abstract class Vehicle implements Serializable {
     public RoadTile getTargetTile() { return targetTile; }
     public double getProgress() { return progress; }
     public void setCurrentTile(RoadTile tile) { this.currentTile = tile; }
+    public String getId() { 
+        return this.id; 
+    }
+    
+    public CargoType getCargoType() { 
+        return this.allowedCargoType; 
+    }
+    
+    public Route getRoute() { 
+        return this.route; 
+    }
+    
+    public double getSpeed() { 
+        return this.speed; 
+    }
 }

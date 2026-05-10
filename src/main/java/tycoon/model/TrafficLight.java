@@ -1,7 +1,11 @@
 package tycoon.model;
 
 import java.io.Serializable;
-
+/**
+ * Represents a traffic light system at a junction.
+ * Manages signal phases (North-South vs East-West) and automatically
+ * switches phases based on configurable green-light durations.
+ */
 public class TrafficLight implements Serializable {
     private SignalPhase phase;
     private double greenNS;
