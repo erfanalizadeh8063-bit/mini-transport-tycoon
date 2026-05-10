@@ -4,7 +4,11 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import tycoon.model.*;
 import java.util.List;
-
+/**
+ * Renders a simplified, top-down view of the WorldMap.
+ * Provides a high-level overview of infrastructure, vehicle locations, 
+ * and a viewport indicator that tracks the main scrollable game area.
+ */
 public class MinimapRenderer {
     private static final int CELL      = 4;
     private static final int TILE_SIZE = 64;

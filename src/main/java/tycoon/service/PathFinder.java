@@ -6,7 +6,11 @@ import tycoon.model.RoadTile;
 import tycoon.model.Tile;
 import tycoon.model.WorldMap;
 import java.io.Serializable;
-
+/**
+ * Provides pathfinding capabilities for vehicles within the world map.
+ * Implements a Breadth-First Search (BFS) algorithm to find the shortest 
+ * route between two RoadTiles, ensuring vehicles navigate only on valid roads.
+ */
 public class PathFinder implements Serializable {
     private WorldMap map;
 

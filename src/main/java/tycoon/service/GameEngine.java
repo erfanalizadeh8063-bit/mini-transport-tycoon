@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import java.io.Serializable;
 
 import tycoon.model.*; 
-
+/**
+ * The core controller of the game simulation.
+ * Manages the game economy (balance), the list of active vehicles, 
+ * and the simulation clock (tick system).
+ */
 public class GameEngine implements Serializable {
     private WorldMap worldMap;
     private List<Vehicle> vehicles;

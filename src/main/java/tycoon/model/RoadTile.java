@@ -4,7 +4,12 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
+/**
+ * A specialized tile representing a road segment.
+ * Handles vehicle occupancy, connectivity with adjacent roads, and 
+ * manages junction logic, including traffic light integration for 
+ * regulating vehicle entry.
+ */
 public class RoadTile extends Tile {
     private double speedLimit;
     private Map<Direction, Vehicle> occupancy;

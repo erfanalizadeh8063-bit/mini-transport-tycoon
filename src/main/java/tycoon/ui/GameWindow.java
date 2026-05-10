@@ -20,7 +20,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
+/**
+ * The main graphical user interface for the Mini Transport Tycoon game.
+ * Manages the JavaFX application lifecycle, tool modes (Building, Inspecting, etc.), 
+ * the game loop timer, and all interactive menu screens.
+ */
 public class GameWindow extends Application {
     private static final int TILE_SIZE = 64;
 

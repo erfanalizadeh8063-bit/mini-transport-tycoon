@@ -5,6 +5,10 @@ import java.util.List;
 import java.io.Serializable;
 /**
  * Manages the 2D grid of tiles and provides spatial queries.
+ * This class handles tile layout, road connectivity logic, facility-stop binding, 
+ * and global updates such as traffic light cycles and forest growth.
+ * * @author Your Name
+ * @version 1.0
  */
 public class WorldMap implements Serializable {
     private int width;  // UML: width: int

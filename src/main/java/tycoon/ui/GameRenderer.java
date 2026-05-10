@@ -5,7 +5,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.image.Image;
 import tycoon.model.*;
 import java.util.List;
-
+/**
+ * Responsible for drawing the game world and its entities onto a JavaFX Canvas.
+ * Manages sprite loading and renders tiles (Forest, Road, Buildings) and 
+ * vehicles with smooth interpolation based on their current progress.
+ */
 public class GameRenderer {
     private static final int TILE_SIZE = 64;
 
