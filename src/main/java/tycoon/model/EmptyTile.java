@@ -1,13 +1,14 @@
 package tycoon.model;
 
-import java.io.Serializable;
 import java.util.Random;
 
 /**
  * Represents an empty, buildable tile on the map.
  * Over time, an empty tile may naturally grow into a ForestTile.
+ * 
  */
-public class EmptyTile extends Tile implements Serializable {
+
+public class EmptyTile extends Tile{
 
     private static final double FOREST_SPAWN_INTERVAL = 120.0;
     private static final double FOREST_SPAWN_CHANCE = 0.15;
