@@ -6,7 +6,16 @@ The goal of **Mini Transport Tycoon** is to maximize profit by organizing road f
 
 The DEMO video : (https://youtu.be/NTQCkYRhuA4)
 
+## 📸 Screenshots
 
+### Game Overview
+![Game Overview](images/game-overview.png)
+
+### Minimap Navigation
+![Minimap View](images/minimap-view.png)
+
+### Forest Tiles
+![Forest Tiles](images/forest-tiles.png)
 
 ---
 
