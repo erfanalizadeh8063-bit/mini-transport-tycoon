@@ -8,11 +8,21 @@ import java.util.List;
  * Renders a simplified, top-down view of the WorldMap.
  * Provides a high-level overview of infrastructure, vehicle locations, 
  * and a viewport indicator that tracks the main scrollable game area.
+ * 
+ * @author Srinivas James Madoc
+ * @version 1.0
  */
 public class MinimapRenderer {
     private static final int CELL      = 4;
     private static final int TILE_SIZE = 64;
 
+    /**
+     * Renders the entire world map at minimap scale.
+     * Each tile is drawn as a 4x4 pixel square with color-coded terrain.
+     * 
+     * @param gc graphics context to draw on
+     * @param map the world map to render
+     */
     public void render(GraphicsContext gc, WorldMap map) {
         gc.clearRect(0, 0, map.getWidth() * CELL, map.getHeight() * CELL);
         for (int x = 0; x < map.getWidth(); x++) {
@@ -23,6 +33,12 @@ public class MinimapRenderer {
         }
     }
 
+    /**
+     * Renders all vehicles as small yellow dots on the minimap.
+     * 
+     * @param gc graphics context to draw on
+     * @param vehicles list of vehicles to render
+     */
     public void renderVehicles(GraphicsContext gc, List<Vehicle> vehicles) {
         gc.setFill(Color.YELLOW);
         for (Vehicle v : vehicles) {
@@ -34,6 +50,18 @@ public class MinimapRenderer {
         }
     }
 
+    /**
+     * Draws a white rectangle indicating the current viewport position.
+     * Allows players to see which part of the map is currently visible.
+     * 
+     * @param gc graphics context to draw on
+     * @param scrollH horizontal scroll position (0.0 to 1.0)
+     * @param scrollV vertical scroll position (0.0 to 1.0)
+     * @param viewW viewport width in pixels
+     * @param viewH viewport height in pixels
+     * @param mapW total map width in pixels
+     * @param mapH total map height in pixels
+     */
     public void drawViewport(GraphicsContext gc, double scrollH, double scrollV,
                              double viewW, double viewH, double mapW, double mapH) {
         double ratio = (double) CELL / TILE_SIZE;
@@ -60,6 +88,13 @@ public class MinimapRenderer {
         gc.strokeRect(vpX, vpY, vpW, vpH);
     }
 
+    /**
+     * Draws a legend explaining minimap colors.
+     * 
+     * @param gc graphics context to draw on
+     * @param offsetX x position for legend
+     * @param offsetY y position for legend
+     */
     public void drawLegend(GraphicsContext gc, double offsetX, double offsetY) {
         double boxSize = 8;
         double spacing = 14;
@@ -87,6 +122,12 @@ public class MinimapRenderer {
         }
     }
 
+    /**
+     * Maps a tile type to its corresponding minimap color.
+     * 
+     * @param tile the tile to get color for
+     * @return color representing this tile type
+     */
     private Color tileColor(Tile tile) {
         if (tile instanceof RoadTile)   return Color.GRAY;
         if (tile instanceof City)       return Color.DARKSLATEGRAY;
@@ -95,5 +136,10 @@ public class MinimapRenderer {
         return Color.web("#91cf60");
     }
 
+    /**
+     * Returns the pixel size of each minimap cell.
+     * 
+     * @return cell size in pixels
+     */
     public static int cellSize() { return CELL; }
 }
