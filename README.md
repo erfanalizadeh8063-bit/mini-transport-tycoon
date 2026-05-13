@@ -9,13 +9,13 @@ The DEMO video : (https://youtu.be/NTQCkYRhuA4)
 ## 📸 Screenshots
 
 ### Game Overview
-[View Game Overview](images/game-overview.png)
+![Game Overview](images/game-overview.png)
 
 ### Minimap Navigation
-[View Minimap](images/minimap-view.png)
+![Minimap](images/minimap-view.png)
 
 ### Saved Data
-[View Saved Data](images/forest-tiles.png)
+![Saved Data](images/forest-tiles.png)
 
 ---
 
