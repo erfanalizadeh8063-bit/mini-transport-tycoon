@@ -4,6 +4,8 @@ A simplified transportation-economic simulation game developed for the **Softwar
 ## 📖 Project Overview
 The goal of **Mini Transport Tycoon** is to maximize profit by organizing road freight and passenger transport between cities and industrial facilities. Players must build road networks, establish strategic routes, and manage a fleet of vehicles while maintaining financial stability to avoid bankruptcy.
 
+The DEMO video : (https://youtu.be/NTQCkYRhuA4)
+
 
 
 ---
