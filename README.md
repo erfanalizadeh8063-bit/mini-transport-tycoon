@@ -14,8 +14,8 @@ The DEMO video : (https://youtu.be/NTQCkYRhuA4)
 ### Minimap Navigation
 [View Minimap](images/minimap-view.png)
 
-### Forest Tiles
-[View Forest Tiles](images/forest-tiles.png)
+### Saved Data
+[View Saved Data](images/forest-tiles.png)
 
 ---
 
