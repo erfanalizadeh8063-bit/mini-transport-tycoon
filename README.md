@@ -1,79 +1,123 @@
-# Mini Transport Tycoon - Group 10
-A simplified transportation-economic simulation game developed for the **Software Technology Practice** course (2025/2026 Spring) at **ELTE Faculty of Informatics**.
+# Mini Transport Tycoon
 
-## 📖 Project Overview
-The goal of **Mini Transport Tycoon** is to maximize profit by organizing road freight and passenger transport between cities and industrial facilities. Players must build road networks, establish strategic routes, and manage a fleet of vehicles while maintaining financial stability to avoid bankruptcy.
+A desktop transportation and economy simulation built as a three-person team project for the **Software Technology Practice** course (2025/2026 Spring) at **ELTE Faculty of Informatics**.
 
-The DEMO video : (https://youtu.be/NTQCkYRhuA4)
+Players build road networks, create passenger and cargo routes, manage vehicles, and keep the transport company financially sustainable.
 
-## 📸 Screenshots
+[Watch the demo video](https://youtu.be/NTQCkYRhuA4)
 
-### Game Overview
-![Game Overview](images/game-overview.png)
+## Highlights
 
-### Minimap Navigation
-![Minimap](images/minimap-view.png)
+- Grid-based world with cities, industries, forests, roads, and stops
+- Passenger and cargo transportation with configurable circular routes
+- Vehicle movement, routing, queues, and collision handling
+- Adjustable simulation speeds
+- Save and load support
+- Navigable minimap
+- Installable traffic lights with configurable north-south and east-west phases
+- Automated tests with JaCoCo coverage reporting
 
-### Saved Data
-![Saved Data](images/forest-tiles.png)
+## Screenshots
 
----
+### Game overview
 
-## 🚀 Team & Complexity Units (Total: 5.0)
-To achieve the required complexity of 5.0 units, our team has selected the following features:
+![Game overview](images/game-overview.png)
 
-| Feature | Assigned Member | Complexity | Description |
-| :--- | :--- | :--- | :--- |
-| **Base Game** | All Members | 2.0 | Core mechanics, grid map, and economy. |
-| **Forests** | Srinivas James Madoc | 0.5  | Trees grow on tiles and increase road building costs. |
-| **Minimap** | Srinivas James Madoc | 0.5  | A navigable, small-scale map for easier orientation. |
-| **Persistence** | Jiayu Kang | 0.5  | Save/load system for game states and vehicle positions. |
-| **Continuous Movement** | Jiayu Kang | 0.5  | Smooth, animated vehicle movement between tiles. |
-| **Traffic Lights** | Alizadeh Erfan | 1.0 | Manual/timed control of signals at intersections. |
+### Minimap navigation
 
----
+![Minimap navigation](images/minimap-view.png)
 
-## 🛠️ Functional Requirements
+### Forest tiles
 
-### Core Mechanics
-* **Map System**: A 2D grid featuring fixed cities (min $3\times3$ tiles) and industrial facilities (min $2\times2$ tiles).
-* **Infrastructure**: Players can build roads on empty tiles and place stops.
-* **Logistics**:
-    * Support for passengers and at least 3 types of industrial goods (e.g., wood, iron, steel).
-    * Cities and industries generate production/demand that changes over time.
-* **Transportation**:
-    * Dedicated road vehicles (at least 2 types per category) for passengers and cargo.
-    * Configurable circular routes (e.g., $A\rightarrow B\rightarrow C\rightarrow A$) for automated movement.
-* **Time Management**: Four speed settings: Pause, Normal, Fast (2x), and Very Fast (4x).
+![Forest tiles](images/forest-tiles.png)
 
-### Sub-task Specifics
-* **Vegetation**: Dynamic tree growth (1-4 trees per tile) on empty tiles; clearing trees adds to construction costs.
-* **Navigation**: A scrollable interface with a dedicated navigable minimap for navigation.
-* **Data Management**: Ability to handle multiple save files and resume journeys for vehicles in motion.
-* **Traffic Control**: Player-installed traffic lights at junctions with adjustable green light intervals per direction.
+## My Contribution — Erfan Alizadeh
 
----
+I was responsible for the **traffic-light feature** and its integration into the simulation.
 
-## ⚙️ Non-Functional Requirements
-* **Technology**: Java (JDK 17 or higher recommended).
-* **Tools**: Git for version control, Maven/Gradle for build management.
-* **UI Style**: 2D top-down perspective where individual tile content is illustrated by images.
-* **Performance**: Smooth continuous animation for vehicles between tiles.
+My work included:
 
+- Modeling traffic-light phases for north-south and east-west movement
+- Implementing automatic phase switching with configurable green-light durations
+- Controlling whether vehicles can pass based on their direction
+- Connecting traffic lights to road junctions
+- Supporting installation and visualization through the game interface
+- Contributing fixes for junction behavior and UI layout
 
+Relevant code:
 
----
+- [TrafficLight.java](src/main/java/tycoon/model/TrafficLight.java)
+- [SignalPhase.java](src/main/java/tycoon/model/SignalPhase.java)
+- [Junction.java](src/main/java/tycoon/model/Junction.java)
 
-## 📂 Design Documentation (Wiki)
-Detailed documentation can be found in the project Wiki:
-1. **Use Case Diagram**: Interaction between players and the simulation engine.
-2. **UI Plan / Wireframes**: Visual layout of the game interface and popups.
-3. **User Stories**: Functional goals for manual testing and implementation verification.
-4. **Class Diagram**: Structural architecture following the **MVC (Model-View-Controller)** pattern.
+## Technology
 
----
+- Java 17
+- JavaFX 17
+- Maven
+- JUnit 5
+- JaCoCo
+- Git
+- MVC-oriented architecture
 
-## 💻 Installation & Setup
-1. **Clone the repository**:
-   ```bash
-   git clone [https://szofttech.inf.elte.hu/software-technology-2026/group-10/let-me-think.git](https://szofttech.inf.elte.hu/software-technology-2026/group-10/let-me-think.git)
+## Getting Started
+
+### Prerequisites
+
+Install:
+
+- JDK 17 or newer
+- Apache Maven 3.8 or newer
+
+Confirm the installation:
+
+```bash
+java -version
+mvn -version
+```
+
+### Clone and run
+
+```bash
+git clone https://github.com/erfanalizadeh8063-bit/mini-transport-tycoon.git
+cd mini-transport-tycoon
+mvn javafx:run
+```
+
+### Run the tests
+
+```bash
+mvn clean test
+```
+
+The current test suite contains **46 passing tests** with no failures or errors.
+
+A JaCoCo coverage report is generated at:
+
+```text
+target/site/jacoco/index.html
+```
+
+## Main Features
+
+- **Map system:** A two-dimensional tile grid containing cities and industrial facilities
+- **Infrastructure:** Roads, stops, junctions, forests, and traffic lights
+- **Economy:** Construction costs, vehicle purchases, transport income, and bankruptcy conditions
+- **Logistics:** Passenger transport and multiple industrial cargo types
+- **Routes:** Configurable circular routes with automated vehicle movement
+- **Time control:** Pause, normal, fast, and very-fast simulation modes
+- **Persistence:** Multiple save files and restoration of active journeys
+- **Traffic control:** Timed signals with separate directional phases
+
+## Team
+
+| Member | Main responsibility |
+| --- | --- |
+| Erfan Alizadeh | Traffic lights and related junction/UI integration |
+| Srinivas James Madoc | Forests and minimap |
+| Jiayu Kang | Persistence and continuous vehicle movement |
+| All team members | Base game, integration, testing, and documentation |
+
+## Academic Context
+
+This repository preserves the original team commit history and credits each contributor. It was developed as coursework at ELTE Faculty of Informatics and is presented here as part of my software-development portfolio.
